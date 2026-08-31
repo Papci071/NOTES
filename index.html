@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>NOTES</title>
+        <link rel="stylesheet" href="style.css">
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+    </head>
+    <body>
+
+    <div id="login_overlay">
+        <div id="login_window">
+            <h2>NOTES APP</h2>
+            <p>Zaloguj się kontem Google, aby móc zapisywać swoje dane na swoim Dysku Google</p>
+            <button id="login_btn" type="button" class="google-btn">
+                <svg class="google-icon" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                    <path fill="none" d="M0 0h48v48H0z"/>
+                </svg>
+                <span>Zaloguj się przez Google</span>
+            </button>
+        </div>
+    </div>
+
+    
+
+
+    <div id="content">
+    <button id="logout_btn" type="button" class="logout-btn">Wyloguj</button>
+    
+        <div id="last_folder" class="folder">
+            <div id="folder_add"></div>
+        </div>
+       
+    </div>
+
+
+
+
+    <div id="create_folder_window" style="display: none;">
+        <h3>STWÓRZ NOWY FOLDER</h3>
+        <hr>
+        <form>
+            <label for="input_name">Nazwa folderu: </label>
+            <input type="text" value="NAZWA" id="input_name" name="input_name" maxlength="15">
+            <br>
+            <label for="input_img">Grafika folderu: </label>
+            <input type="file" id="input_img" name="input_img" accept="image/*">
+            <br>
+            <label for="input_color">*Kolor folderu: </label>
+            <input type="color" value="#C95364" id="input_color" name="input_color">
+            <br>
+            <label for="input_default_files">Podstawowa zawartość folderu: </label>
+            <input type="file" id="input_default_files" name="input_default_files" multiple accept="image/*">
+            <br>
+            <button>Stwórz</button>
+            <div id="upload_progress_container" style="display: none; margin-top: 15px;">
+                <div id="progress_bar_bg">
+                    <div id="progress_bar_fill"></div>
+                </div>
+                <span id="progress_text">0 / 0</span>
+            </div>
+        </form>
+        <p>*Kolor może zostać przykryty prze grafikę, kolor aplikuje się również jako kolor okładki notesu</p>
+    </div>
+
+
+    <div id="notes_tab" >
+        
+        <div id="notes_upload_progress_container" style="display: none;">
+            <div id="notes_progress_bar_bg">
+                <div id="notes_progress_bar_fill"></div>
+            </div>
+            <span id="notes_progress_text">0 / 0</span>
+        </div>
+
+        <div id="close_notes_tab">
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </div>
+
+        <div id="previous_page">
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </div>
+
+
+        <div id="notes_display">
+            <div id="notes_visual_cover">
+                <div id="notes_display_name">NAZWA</div>
+
+                <div id="cover_lines">
+                    <hr id="cover_hr_1">
+                    <hr id="cover_hr_2">
+                    <hr id="cover_hr_3">
+                    <hr id="cover_hr_4">
+                    <hr id="cover_hr_5">
+                </div>
+
+            </div>
+
+
+            <div id="notes_visual_efects">
+                <div id="notes_top_visual">
+                    <div id="notes_visual_cards">
+    
+                    </div>
+                </div>
+                <div id="notes_right_visual">
+                    <div id="no_kurwa_kartki"></div>
+                    <div id="no_kurwcze_rurcze_trzeba_tutaj_cos_takiego">
+                        <div id="kolejny_potrzebny_divek"></div>
+                    </div>
+                </div>
+
+                <div id="pages_ilusion_visual"></div>
+                
+
+
+                <div id="notes_opend_view">
+                    <div id="main_kurwa_kartka">
+                        <div id="left_page" class="page"></div>
+                        <div id="middle_line"></div>
+                        <div id="right_page" class="page"></div>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+
+
+        </div>
+
+        <div id="next_page">
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+        </div>
+
+        <input type="file" id="input_append_files" multiple accept="image/*" style="display: none;">
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true">
+    <filter id="brush-edge">
+        <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="4" result="noise" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="24" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+    </svg>
+    <script src="script.js"></script>
+    </body>
+</html>
