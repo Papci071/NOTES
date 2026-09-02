@@ -1,4 +1,3 @@
-console.log("update udany");
 
 let activeBlobUrls = [];
 
