@@ -17,10 +17,6 @@ const auth = getAuth(app);
 
 const provider = new GoogleAuthProvider();
 provider.addScope("https://www.googleapis.com/auth/drive.file");
-provider.setCustomParameters({
-    prompt: 'consent'
-});
-
 
 let activeBlobUrls = [];
 
