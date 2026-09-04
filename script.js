@@ -1,3 +1,26 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDiqfAFewYMQZI4Cy8Mtb5ke-h4MuizwlQ",
+    authDomain: "notes-23093.firebaseapp.com",
+    projectId: "notes-23093",
+    storageBucket: "notes-23093.firebasestorage.app",
+    messagingSenderId: "226481476851",
+    appId: "1:226481476851:web:6b39d103ecc89658071386",
+    measurementId: "G-L65GF83XR4"
+  };
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+
+const provider = new GoogleAuthProvider();
+provider.addScope("https://www.googleapis.com/auth/drive.file");
+provider.setCustomParameters({
+    prompt: 'consent'
+});
+
 
 let activeBlobUrls = [];
 
@@ -58,108 +81,57 @@ content.insertBefore(newFolder,last_folder);
 };
 
 
-//Logowanie Do Google
+//Połączenie z Google (Firebase)
 
-const CLIENT_ID = "29473681906-fgbedoktc8lkod4gj4sue14sen5hon4j.apps.googleusercontent.com";
-const SCOPES = "https://www.googleapis.com/auth/drive.file";
+let accessToken = sessionStorage.getItem("drive_token") || null;
 
-let tokenClient;
-let accessToken = null;
+document.getElementById("login_btn").addEventListener("click", async function() {
+    try{
+        const result = await signInWithPopup(auth, provider);
+        const credential = GoogleAuthProvider.credentialFromResult(result);
 
-let tokenRefreshTimer = null;
-
-function scheduleTokenRefresh(expiresInSeconds) {
-    if (tokenRefreshTimer) clearTimeout(tokenRefreshTimer);
-
-    const refreshDelay = Math.max((expiresInSeconds - 300) * 1000, 10000);
-
-    tokenRefreshTimer = setTimeout(() => {
-        if (tokenClient) {
-            tokenClient.requestAccessToken({ prompt: "" });
+        if(!credential.accessToken){
+            await logoutUser();
+            alert("Aplikacja wymaga dostępu do Dysku Google, aby móc działać.")
+            return;
         }
-    }, refreshDelay);
-}
 
-function initGoogleAuth() {
-    tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
-        callback: (response) => {
-            if (response.error !== undefined) {
-                console.error("Błąd autoryzacji Google:", response);
-                logoutUser();
-                return;
-            }
-            accessToken = response.access_token;
-            console.log("Token zaktualizowany!");
-            const expireAt = Date.now() + response.expires_in * 1000;
-            localStorage.setItem("gdrive_access_token", accessToken);
-            localStorage.setItem("gdrive_token_expires", expireAt);
-            scheduleTokenRefresh(response.expires_in);
-            document.getElementById("login_overlay").style.display = "none";
-            if (!appFolderId) {
-                initAppFolder();
-            }
-        },
-    });
-    checkExistingSession();
-}
+        accessToken = credential.accessToken;
+        sessionStorage.setItem("drive_token", accessToken);
 
-function checkExistingSession() {
-    const savedToken = localStorage.getItem("gdrive_access_token");
-    const expiresAt = localStorage.getItem("gdrive_token_expires");
-
-    const overlay = document.getElementById("login_overlay");
-    const loginWindow = document.getElementById("login_window");
-
-    if (savedToken && expiresAt && Date.now() < Number(expiresAt) - 60000) {
-        accessToken = savedToken;
-        console.log("Przywrócono aktywną sesję!");
-        overlay.style.display = "none";
-
-        // Ustawiamy timer na pozostały czas życia tokena
-        const remainingSeconds = Math.round((Number(expiresAt) - Date.now()) / 1000);
-        scheduleTokenRefresh(remainingSeconds);
-
-        initAppFolder();
-    } else {
-        overlay.style.display = "flex";
-        loginWindow.style.display = "block";
+        document.getElementById("login_overlay").style.display = "none";
+        document.getElementById("login_window").style.display = "none";
+        await initAppFolder();
+        
+    } catch(err) {
+        console.error("Błąd logowania: ", err);
     }
-}
 
-document.getElementById("login_btn").addEventListener("click", () => {
-    if (!tokenClient) {
-        alert("Biblioteka Google nie została jeszcze załadowana.");
-        return;
-    }
-    tokenClient.requestAccessToken({ prompt: "consent" });
 });
 
-function startAuthWhenReady() {
-    if (typeof google !== "undefined" && google.accounts) {
-        initGoogleAuth();
+
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        document.getElementById("login_overlay").style.display = "none";
+        document.getElementById("login_window").style.display = "none";
+        if (accessToken && !appFolderId) {
+            await initAppFolder();
+        }
     } else {
-        const checkGoogle = setInterval(() => {
-            if (typeof google !== "undefined" && google.accounts) {
-                clearInterval(checkGoogle);
-                initGoogleAuth();
-            }
-        }, 50);
+        console.log("Użytkownik nie jest zalogowany.");
+        document.getElementById("login_overlay").style.display = "flex";
+        document.getElementById("login_window").style.display = "block";
     }
-}
-
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", startAuthWhenReady);
-} else {
-    startAuthWhenReady();
-}
-
-
+});
 
 //Wylogowanie Z Konta Google
 
-function logoutUser() {
+async function logoutUser() {
+
+    await signOut(auth);
+
+    sessionStorage.removeItem("drive_token");
+
     currentQueueId++;
     activeBlobUrls.forEach(url => URL.revokeObjectURL(url));
     activeBlobUrls = [];
@@ -171,16 +143,9 @@ function logoutUser() {
     const notesTab = document.getElementById("notes_tab");
     if (notesTab) notesTab.classList.remove("active");
 
-    if (accessToken) {
-        try {
-            google.accounts.oauth2.revoke(accessToken, () => {});
-        } catch (err) {}
-    }
 
     accessToken = null;
     appFolderId = null;
-    localStorage.removeItem("gdrive_access_token");
-    localStorage.removeItem("gdrive_token_expires");
 
     document.getElementById("login_overlay").style.display = "flex";
     document.getElementById("login_window").style.display = "block";
