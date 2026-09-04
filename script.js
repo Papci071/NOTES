@@ -18,6 +18,53 @@ const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 provider.addScope("https://www.googleapis.com/auth/drive.file");
 
+
+let isRefreshing = false;
+
+async function refreshDriveToken() {
+    if (isRefreshing) return false;
+    isRefreshing = true;
+
+    try {
+        const result = await signInWithPopup(auth, provider);
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        
+        if (credential && credential.accessToken) {
+            accessToken = credential.accessToken;
+            sessionStorage.setItem("drive_token", accessToken);
+            isRefreshing = false;
+            return true;
+        }
+    } catch (err) {
+        console.error("Błąd podczas odnawiania sesji Google Drive:", err);
+    }
+
+    isRefreshing = false;
+    return false;
+}
+
+async function driveFetch(url, options = {}) {
+    if (!options.headers) options.headers = {};
+    options.headers["Authorization"] = `Bearer ${accessToken}`;
+
+    let res = await fetch(url, options);
+
+    if (res.status === 401) {
+        console.warn("Wykryto 401. Próba automatycznego odświeżenia tokena...");
+        const refreshed = await refreshDriveToken();
+
+        if (refreshed) {
+            options.headers["Authorization"] = `Bearer ${accessToken}`;
+            res = await fetch(url, options);
+        } else {
+            await logoutUser();
+            throw new Error("Sesja wygasła. Wymagane ponowne logowanie.");
+        }
+    }
+
+    return res;
+}
+
 let activeBlobUrls = [];
 
 //Otwieranie Okna Tworzenia Folderu
@@ -163,9 +210,8 @@ async function initAppFolder() {
         const query = encodeURIComponent(`name = '${APP_FOLDER_NAME}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`);
         const searchUrl = `https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name)`;
 
-        const response = await fetch(searchUrl, {
-            headers: { Authorization: `Bearer ${accessToken}` }
-        });
+        const response = await driveFetch(searchUrl);
+
         const data = await response.json();
 
         if (data.files && data.files.length > 0) {
@@ -176,6 +222,7 @@ async function initAppFolder() {
             appFolderId = await createFolder(APP_FOLDER_NAME);
             console.log("Stworzono folder aplikacji");
         }
+
         await loadFolders();
     } catch (err) {
         console.error("Błąd podczas sprawdzania/tworzenia folderu głównego:", err);
@@ -192,10 +239,9 @@ async function createFolder(folderName, parentFolderId = null) {
         metadata.parents = [parentFolderId];
     }
 
-    const res = await fetch("https://www.googleapis.com/drive/v3/files", {
+    const res = await driveFetch("https://www.googleapis.com/drive/v3/files", {
         method: "POST",
         headers: {
-            Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json"
         },
         body: JSON.stringify(metadata)
@@ -216,28 +262,17 @@ async function uploadFile(fileName, contentBlob, parentFolderId, mimeType) {
     formData.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
     formData.append("file", contentBlob, fileName);
 
-    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+    const res = await driveFetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
         method: "POST",
-        headers: {
-            Authorization: `Bearer ${accessToken}`
-        },
         body: formData
     });
-
-    if (res.status === 401) {
-        console.warn("Sesja wygasła podczas uploadu (401 Unauthorized).");
-        logoutUser();
-        throw new Error("401 Unauthorized");
-    }
 
     return await res.json();
 }
 
 async function getNextDiscId(parentFolderId) {
     const query = encodeURIComponent(`'${parentFolderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`);
-    const res = await fetch(`https://www.googleapis.com/drive/v3/files?pageSize=1000&q=${query}&fields=files(name)`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-    });
+    const res = await driveFetch(`https://www.googleapis.com/drive/v3/files?pageSize=1000&q=${query}&fields=files(name)`);
     const data = await res.json();
 
     let maxId = 0;
@@ -358,9 +393,7 @@ async function loadFolders() {
 
     try {
         const listUrl = `https://www.googleapis.com/drive/v3/files?pageSize=1000&fields=files(id,name,mimeType,parents)&q=${encodeURIComponent("trashed = false")}`;
-        const res = await fetch(listUrl, {
-            headers: { Authorization: `Bearer ${accessToken}` }
-        });
+        const res = await driveFetch(listUrl);
         const allFilesData = await res.json();
         const allItems = allFilesData.files || [];
         const discFolders = allItems
@@ -387,9 +420,7 @@ async function loadFolders() {
 
             if (settingsJsonFile) {
                 fetchTasks.push(
-                    fetch(`https://www.googleapis.com/drive/v3/files/${settingsJsonFile.id}?alt=media`, {
-                        headers: { Authorization: `Bearer ${accessToken}` }
-                    })
+                    driveFetch(`https://www.googleapis.com/drive/v3/files/${settingsJsonFile.id}?alt=media`)
                     .then(r => r.json())
                     .then(data => {
                         if (data.name) folderName = data.name;
@@ -401,9 +432,7 @@ async function loadFolders() {
 
             if (imgFile) {
                 fetchTasks.push(
-                    fetch(`https://www.googleapis.com/drive/v3/files/${imgFile.id}?alt=media`, {
-                        headers: { Authorization: `Bearer ${accessToken}` }
-                    })
+                    driveFetch(`https://www.googleapis.com/drive/v3/files/${imgFile.id}?alt=media`)
                     .then(r => r.blob())
                     .then(blob => {
                         folderImgUrl = URL.createObjectURL(blob);
@@ -555,27 +584,21 @@ async function LoadFiles(disc_name) {
 
     try {
         const discQuery = encodeURIComponent(`'${appFolderId}' in parents and name = '${disc_name}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`);
-        const discRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${discQuery}&fields=files(id,name)`, {
-            headers: { Authorization: `Bearer ${accessToken}` }
-        });
+        const discRes = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${discQuery}&fields=files(id,name)`);
         const discData = await discRes.json();
         if (!discData.files || discData.files.length === 0) return;
 
         currentDiscFolderId = discData.files[0].id;
 
         const filesFolderQuery = encodeURIComponent(`'${currentDiscFolderId}' in parents and name = 'files' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`);
-        const filesFolderRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${filesFolderQuery}&fields=files(id,name)`, {
-            headers: { Authorization: `Bearer ${accessToken}` }
-        });
+        const filesFolderRes = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${filesFolderQuery}&fields=files(id,name)`);
         const filesFolderData = await filesFolderRes.json();
 
         if (!filesFolderData.files || filesFolderData.files.length === 0) return;
 
         const filesFolderId = filesFolderData.files[0].id;
         const listQuery = encodeURIComponent(`'${filesFolderId}' in parents and trashed = false`);
-        const listRes = await fetch(`https://www.googleapis.com/drive/v3/files?pageSize=1000&q=${listQuery}&fields=files(id,name,mimeType)`, {
-            headers: { Authorization: `Bearer ${accessToken}` }
-        });
+        const listRes = await driveFetch(`https://www.googleapis.com/drive/v3/files?pageSize=1000&q=${listQuery}&fields=files(id,name,mimeType)`);
         const listData = await listRes.json();
         if (thisSessionId !== currentQueueId) return;
 
@@ -605,14 +628,8 @@ async function getFileBlobUrl(fileId) {
     if (imageCache[fileId]) return imageCache[fileId];
 
     try {
-        const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-            headers: { Authorization: `Bearer ${accessToken}` }
-        });
-        if (res.status === 401) {
-            console.warn("Sesja wygasła (401 Unauthorized). Wymagane ponowne logowanie.");
-            logoutUser();
-            return "";
-        }
+        const res = await driveFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
+
         const blob = await res.blob();
         if (!blob) return "";
 
@@ -732,9 +749,7 @@ document.getElementById("input_append_files").addEventListener("change", async f
 
     try {
         const query = encodeURIComponent(`'${currentDiscFolderId}' in parents and name = 'files' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`);
-        const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id)`, {
-            headers: { Authorization: `Bearer ${accessToken}` }
-        });
+        const res = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id)`);
         const data = await res.json();
         if (!data.files || data.files.length === 0) return;
 
