@@ -29,14 +29,14 @@ body::after {
     z-index: 100000;
 
     display: grid;
-    grid-template-columns: repeat(auto-fit, 250px);
+    grid-template-columns: repeat(auto-fill, 250px);
     justify-content: center;
+    justify-items: start;
     align-content: flex-start;
     gap: 10px;
     
     width: 100%;
     max-width: calc(100vw - clamp(30px, 5vw, 50px) * 2);
-    border: 1px solid red;
 }
 
 .folder {
@@ -52,7 +52,6 @@ body::after {
     flex-direction: column;
     align-items: center;
     gap: 27px;
-    /* overflow: hidden; */
 }
 
 .folder_image {
@@ -72,7 +71,7 @@ body::after {
 @media (max-width: 600px) {
     #content {
         gap: 6px;
-        grid-template-columns: repeat(auto-fit, 165px);
+        grid-template-columns: repeat(auto-fill, 165px);
     }
 
     .folder {
@@ -93,7 +92,7 @@ body::after {
 @media (max-width: 399px) {
     #content {
         gap: 4px;
-        grid-template-columns: repeat(auto-fit, 140px);
+        grid-template-columns: repeat(auto-fill, 140px);
     }
     .folder {
         width: 140px;
