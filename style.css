@@ -22,23 +22,29 @@ body::after {
     opacity: 0.92;
 }
 
-#content{
-    margin: clamp(40px, 5vw, 70px);
-    min-height: calc(100vh - (clamp(40px, 5vw, 70px) * 2));
+#content {
+    margin: clamp(30px, 5vw, 50px) auto;
+    min-height: calc(100vh - (clamp(30px, 5vw, 50px) * 2));
     position: relative;
     z-index: 100000;
 
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, 250px);
+    justify-content: center;
     align-content: flex-start;
-    gap:25px;
+    gap: 10px;
+    
+    width: 100%;
+    max-width: calc(100vw - clamp(30px, 5vw, 50px) * 2);
+    border: 1px solid red;
 }
 
 .folder {
-    border-radius: 3vh;
+    border-radius: 20px;
     background-color: rgba(160, 153, 153, 0.295);
-    width: 28vh;
-    height: 28vh;
+    width: 250px;
+    aspect-ratio: 1 / 1;
+    height: auto;
     position: relative;
 
     display: flex;
@@ -46,6 +52,7 @@ body::after {
     flex-direction: column;
     align-items: center;
     gap: 27px;
+    /* overflow: hidden; */
 }
 
 .folder_image {
@@ -61,6 +68,47 @@ body::after {
 .folder_image:hover {
     transform: scale(1.05);
 }
+
+@media (max-width: 600px) {
+    #content {
+        gap: 6px;
+        grid-template-columns: repeat(auto-fit, 165px);
+    }
+
+    .folder {
+        width: 165px;
+        gap: 0px;
+    }
+
+    .folder_image {
+        scale: 0.75;
+        margin-top: -15px;
+    }
+    .folder_name {
+        margin-top: -15px;
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 399px) {
+    #content {
+        gap: 4px;
+        grid-template-columns: repeat(auto-fit, 140px);
+    }
+    .folder {
+        width: 140px;
+        gap: 1px;
+    }
+    .folder_image {
+        scale: 0.62;
+        margin-top: -30px;
+    }
+    .folder_name {
+        margin-top: -30px;
+        font-size: 13px;
+    }
+}
+
 
 .folder_name{
     color: black;
@@ -99,10 +147,9 @@ body::after {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 30vw;
-    height: 40vh;
     min-height: fit-content;
-    min-width: 450px;
+    min-width: 500px;
+    width: 500px;
     background-color: rgb(136, 175, 182);
     box-shadow:5px 5px 30px rgb(56, 63, 68);
     z-index: 100000;
@@ -114,7 +161,36 @@ body::after {
 
     user-select: none;
 
+    padding: 0 15px;
+
 }
+
+@media (max-width: 600px) {
+    #create_folder_window {
+        width: 400px;
+        min-width: 400px;
+    }
+}
+
+
+@media (max-width: 399px) {
+    #create_folder_window {
+        width: 350px;
+        min-width: 350px;
+         padding: 0 10px !important;
+    }
+
+    #create_folder_window label {
+        width: max-content !important;
+        max-width: max-content !important;
+        flex-shrink: 0 !important;
+        line-height: 1.1;
+    }
+    #create_folder_window label span {
+        display: block;
+    }
+}
+
 
 hr{
     border: none;
@@ -132,12 +208,16 @@ hr{
     box-shadow: none;
     border: none;
     text-align: left;
-    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
 }
 
 #create_folder_window label {
     font-size: 21px;
     text-align: left;
+    width: max-content;
+    max-width: 50%;
+    flex-shrink: 0;
 }
 
 #create_folder_window button {
@@ -152,6 +232,17 @@ hr{
 #create_folder_window input{
     box-shadow: none;
     border: none;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.form_row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 8px;
 }
 
 #login_overlay{

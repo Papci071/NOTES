@@ -4,7 +4,7 @@
         <meta charset="UTF-8">
         <title>NOTES</title>
         <link rel="stylesheet" href="style.css">
-        <!-- <script src="https://accounts.google.com/gsi/client" async defer></script> -->
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
     <body>
 
@@ -25,11 +25,9 @@
         </div>
     </div>
 
-    
-
-
     <div id="content">
-    <button id="logout_btn" type="button" class="logout-btn">Wyloguj</button>
+
+        <button id="logout_btn" type="button" class="logout-btn">Wyloguj</button>
     
         <div id="last_folder" class="folder">
             <div id="folder_add"></div>
@@ -37,26 +35,32 @@
        
     </div>
 
-
-
-
     <div id="create_folder_window" style="display: none;">
         <h3>STWÓRZ NOWY FOLDER</h3>
         <hr>
         <form>
-            <label for="input_name">Nazwa folderu: </label>
-            <input type="text" value="NAZWA" id="input_name" name="input_name" maxlength="15">
-            <br>
-            <label for="input_img">Grafika folderu: </label>
-            <input type="file" id="input_img" name="input_img" accept="image/*">
-            <br>
-            <label for="input_color">*Kolor folderu: </label>
-            <input type="color" value="#C95364" id="input_color" name="input_color">
-            <br>
-            <label for="input_default_files">Podstawowa zawartość folderu: </label>
-            <input type="file" id="input_default_files" name="input_default_files" multiple accept="image/*">
-            <br>
+            <div class="form_row">
+                <label for="input_name"><span>Nazwa</span> <span>folderu:</span></label>
+                <input type="text" value="NAZWA" id="input_name" name="input_name" maxlength="15">
+            </div>
+
+            <div class="form_row">
+                <label for="input_img"><span>Grafika</span> <span>folderu:</span></label>
+                <input type="file" id="input_img" name="input_img" accept="image/*">
+            </div>
+
+            <div class="form_row">
+                <label for="input_color"><span>*Kolor</span> <span>folderu:</span></label>
+                <input type="color" value="#C95364" id="input_color" name="input_color">
+            </div>
+
+            <div class="form_row">
+                <label for="input_default_files"><span>Zawartość</span> <span>folderu:</span></label>
+                <input type="file" id="input_default_files" name="input_default_files" multiple accept="image/*">
+            </div>
+
             <button>Stwórz</button>
+
             <div id="upload_progress_container" style="display: none; margin-top: 15px;">
                 <div id="progress_bar_bg">
                     <div id="progress_bar_fill"></div>
@@ -91,9 +95,10 @@
             </svg>
         </div>
 
-
         <div id="notes_display">
+
             <div id="notes_visual_cover">
+
                 <div id="notes_display_name">NAZWA</div>
 
                 <div id="cover_lines">
@@ -108,11 +113,13 @@
 
 
             <div id="notes_visual_efects">
+
                 <div id="notes_top_visual">
                     <div id="notes_visual_cards">
     
                     </div>
                 </div>
+
                 <div id="notes_right_visual">
                     <div id="no_kurwa_kartki"></div>
                     <div id="no_kurwcze_rurcze_trzeba_tutaj_cos_takiego">
@@ -122,8 +129,6 @@
 
                 <div id="pages_ilusion_visual"></div>
                 
-
-
                 <div id="notes_opend_view">
                     <div id="main_kurwa_kartka">
                         <div id="left_page" class="page"></div>
@@ -131,12 +136,8 @@
                         <div id="right_page" class="page"></div>
                     </div>
                 </div>
+
             </div>
-
-
-
-
-
 
         </div>
 
@@ -152,24 +153,13 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
     <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true">
-    <filter id="brush-edge">
-        <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="4" result="noise" />
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="24" xChannelSelector="R" yChannelSelector="G" />
-    </filter>
+        <filter id="brush-edge">
+            <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="4" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="24" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
     </svg>
+
     <script type="module" src="script.js"></script>
     </body>
 </html>
