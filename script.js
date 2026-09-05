@@ -297,10 +297,10 @@ const submitBtn = document.querySelector("#create_folder_window button");
 submitBtn.addEventListener("click", async (e) => {
     e.preventDefault();
 
-    if (!appFolderId) {
-        alert("Brak folderu głównego na Dysku!");
-        return;
-    }
+    // if (!appFolderId) {
+    //     alert("Brak folderu głównego na Dysku!");
+    //     return;
+    // }
 
     const name = document.getElementById("input_name").value;
     const color = document.getElementById("input_color").value;
