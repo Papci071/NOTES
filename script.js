@@ -124,18 +124,18 @@ content.insertBefore(newFolder,last_folder);
 };
 
 
-//Połączenie z Google (Firebase)
+///Połączenie z Google (Firebase)
 
 let accessToken = sessionStorage.getItem("drive_token") || null;
 
 document.getElementById("login_btn").addEventListener("click", async function() {
-    try{
+    try {
         const result = await signInWithPopup(auth, provider);
         const credential = GoogleAuthProvider.credentialFromResult(result);
 
-        if(!credential.accessToken){
+        if (!credential || !credential.accessToken) {
             await logoutUser();
-            alert("Aplikacja wymaga dostępu do Dysku Google, aby móc działać.")
+            alert("Aplikacja wymaga dostępu do Dysku Google, aby móc działać.");
             return;
         }
 
@@ -144,32 +144,28 @@ document.getElementById("login_btn").addEventListener("click", async function() 
 
         document.getElementById("login_overlay").style.display = "none";
         document.getElementById("login_window").style.display = "none";
-        await initAppFolder();
+
+        if (!appFolderId) {
+            await initAppFolder();
+        }
         
     } catch(err) {
-        console.error("Błąd logowania: ", err);
+        if (err.code !== "auth/popup-closed-by-user") {
+            console.error("Błąd logowania: ", err);
+        }
     }
-
 });
 
-
 onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        if (!accessToken) {
-            console.log("Użytkownik zalogowany do Firebase, pobieram token Google Drive...");
-            const refreshed = await refreshDriveToken();
-            if (!refreshed) {
-                await logoutUser();
-                return;
-            }
-        }
+    if (user && accessToken) {
         document.getElementById("login_overlay").style.display = "none";
         document.getElementById("login_window").style.display = "none";
-        if (accessToken && !appFolderId) {
+        
+        if (!appFolderId) {
             await initAppFolder();
         }
     } else {
-        console.log("Użytkownik nie jest zalogowany.");
+        console.log("Wymagane logowanie");
         document.getElementById("login_overlay").style.display = "flex";
         document.getElementById("login_window").style.display = "block";
     }
