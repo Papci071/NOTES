@@ -377,6 +377,12 @@ hr{
     pointer-events: none;
     transition: opacity 0.5s ease;
 
+    display: flex;
+    gap: 10px;
+
+    justify-content: center;
+    align-items: center;
+
 }
 
 #notes_tab.active {
@@ -389,7 +395,6 @@ hr{
     height: 70px;
     border: 3px solid black;
     border-radius: 50%;
-    margin: 20px;
     cursor: pointer;
     user-select: none;
 
@@ -397,7 +402,10 @@ hr{
     justify-content: center;
     align-items: center;
     transition: transform 0.15s ease;
-    float: right;
+    
+    position: absolute;
+    top: 10px;
+    right: 10px;
 }
 
 #close_notes_tab:hover {
@@ -418,7 +426,7 @@ hr{
 #cover_lines{
     margin-top: auto; 
     margin-bottom: 20px;
-    position: fixed;
+    position: absolute;
     width: 100%;
     bottom: 80px;
 }
@@ -462,10 +470,28 @@ hr{
 }
 
 #next_page {
-    position: fixed;
-    top: 50%;
-    left: calc(50% + 620px);
-    transform: translateY(-50%);
+    width: 70px;
+    height: 70px;
+    border: 3px solid black;
+    border-radius: 50%;
+    cursor: pointer;
+    user-select: none;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.15s ease;
+
+    position: relative;
+    left: 25px;
+}
+
+#next_page:hover {
+    transform: scale(1.06);
+}
+
+#previous_page {
+    /* display: none; */
 
     width: 70px;
     height: 70px;
@@ -480,41 +506,14 @@ hr{
     transition: transform 0.15s ease;
 }
 
-#next_page:hover {
-    transform: translateY(-50%) scale(1.06);
-}
-
-#previous_page {
-    display: none;
-    position: fixed;
-    top: 50%;
-    right: calc(50% + 600px);
-    transform: translateY(-50%);
-
-    width: 70px;
-    height: 70px;
-    border: 3px solid black;
-    border-radius: 50%;
-    cursor: pointer;
-    user-select: none;
-
-    justify-content: center;
-    align-items: center;
-    transition: transform 0.15s ease;
-}
-
 #previous_page:hover {
-    transform: translateY(-50%) scale(1.06);
+    transform: scale(1.06);
 }
 
 
 
 #notes_display {
-    position: fixed;
-    top: 50%;
-    left: calc(50%);
-    transform: translateY(-50%);
-
+    position: relative;
     width: 576px;
     height: 850px;
 
