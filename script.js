@@ -155,6 +155,14 @@ document.getElementById("login_btn").addEventListener("click", async function() 
 
 onAuthStateChanged(auth, async (user) => {
     if (user) {
+        if (!accessToken) {
+            console.log("Użytkownik zalogowany do Firebase, pobieram token Google Drive...");
+            const refreshed = await refreshDriveToken();
+            if (!refreshed) {
+                await logoutUser();
+                return;
+            }
+        }
         document.getElementById("login_overlay").style.display = "none";
         document.getElementById("login_window").style.display = "none";
         if (accessToken && !appFolderId) {
@@ -296,11 +304,6 @@ const submitBtn = document.querySelector("#create_folder_window button");
 
 submitBtn.addEventListener("click", async (e) => {
     e.preventDefault();
-
-    // if (!appFolderId) {
-    //     alert("Brak folderu głównego na Dysku!");
-    //     return;
-    // }
 
     const name = document.getElementById("input_name").value;
     const color = document.getElementById("input_color").value;
