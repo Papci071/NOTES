@@ -494,6 +494,12 @@ document.addEventListener("click", function(e) {
     if(e.target.closest("#close_notes_tab")){
         document.getElementById("notes_tab").classList.remove("active");
         currentQueueId++;
+
+        active_page_number = 0;
+        updateNotesView();
+
+        document.getElementById("left_page").innerHTML = "";
+        document.getElementById("right_page").innerHTML = "";
     }
 
 
@@ -507,46 +513,70 @@ document.addEventListener("click", function(e) {
 
 let active_page_number = 0;
 
+function isSinglePage() {
+    return window.innerWidth <= 1190;
+}
+
+function hideBtn(btn) {
+    btn.style.opacity = "0";
+    btn.style.pointerEvents = "none";
+    btn.style.visibility = "hidden";
+}
+
+function showBtn(btn) {
+    btn.style.opacity = "1";
+    btn.style.pointerEvents = "auto";
+    btn.style.visibility = "visible";
+}
+
 function updateNotesView() {
     const prevBtn = document.getElementById("previous_page");
     const nextBtn = document.getElementById("next_page");
     const coverView = document.getElementById("notes_visual_cover");
-    const openView = document.getElementById("notes_opend_view");
     const topCards = document.getElementById("notes_visual_cards");
+    const notesDisplay = document.getElementById("notes_display");
 
     if (isLoadingFolderFiles) {
-        nextBtn.style.display = "none";
-        prevBtn.style.display = "none";
+        hideBtn(prevBtn);
+        hideBtn(nextBtn);
         return;
     }
 
     if (active_page_number === 0) {
-        prevBtn.style.display = "none";
-        nextBtn.style.display = "flex";
+        notesDisplay.classList.remove("opened");
+        notesDisplay.style.removeProperty("width");
+
+        hideBtn(prevBtn);
+        showBtn(nextBtn);
+
         coverView.style.display = "block";
-        openView.style.display = "none";
         topCards.style.height = "20px";
         topCards.style.removeProperty("top");
     } else {
-        prevBtn.style.display = "flex";
+        notesDisplay.classList.add("opened");
+        notesDisplay.style.removeProperty("width");
+
+        showBtn(prevBtn);
         coverView.style.display = "none";
-        openView.style.display = "flex";
         topCards.style.height = "26px";
         topCards.style.top = "5px";
 
-        const maxPage = (Math.floor(currentNoteFiles.length / 2) + 1) * 2;
+        const maxPage = isSinglePage() ? currentNoteFiles.length + 1 : (Math.floor(currentNoteFiles.length / 2) + 1) * 2;
+
         if (active_page_number >= maxPage) {
-            nextBtn.style.display = "none";
+            hideBtn(nextBtn);
         } else {
-            nextBtn.style.display = "flex";
+            showBtn(nextBtn);
         }
     }
 }
 
 document.getElementById("next_page").addEventListener("click", function() {
-    const maxPage = (Math.floor(currentNoteFiles.length / 2) + 1) * 2;
+    const step = isSinglePage() ? 1 : 2;
+    const maxPage = isSinglePage() ? currentNoteFiles.length + 1 : (Math.floor(currentNoteFiles.length / 2) + 1) * 2;
+
     if (active_page_number < maxPage) {
-        active_page_number += 2;
+        active_page_number += step;
         updateNotesView();
         renderCurrentPages();
     }
@@ -554,8 +584,10 @@ document.getElementById("next_page").addEventListener("click", function() {
 
 
 document.getElementById("previous_page").addEventListener("click", function() {
+    const step = isSinglePage() ? 1 : 2;
+
     if (active_page_number > 0) {
-        active_page_number -= 2;
+        active_page_number = Math.max(0, active_page_number - step);
         updateNotesView();
         renderCurrentPages();
     }
@@ -652,11 +684,17 @@ async function renderCurrentPages() {
         return;
     }
 
-    const leftFileIndex = active_page_number - 2;
-    const rightFileIndex = active_page_number - 1;
-
-    renderSinglePage(leftContainer, leftFileIndex);
-    renderSinglePage(rightContainer, rightFileIndex);
+    if (isSinglePage()) {
+        rightContainer.innerHTML = "";
+        const singleFileIndex = active_page_number - 1;
+        renderSinglePage(leftContainer, singleFileIndex);
+    } else {
+        const leftFileIndex = active_page_number - 2;
+        const rightFileIndex = active_page_number - 1;
+        renderSinglePage(leftContainer, leftFileIndex);
+        renderSinglePage(rightContainer, rightFileIndex);
+    }
+    
 }
 
 async function renderSinglePage(container, fileIndex) {
@@ -808,5 +846,32 @@ document.getElementById("input_append_files").addEventListener("change", async f
             progressFill.style.width = "0%";
             progressText.textContent = "0 / 0";
         }, 500);
+    }
+});
+
+
+
+
+let wasSinglePage = isSinglePage();
+
+window.addEventListener("resize", () => {
+    const currentIsSingle = isSinglePage();
+
+    if (active_page_number > 0 && wasSinglePage !== currentIsSingle) {
+        if (!currentIsSingle) {
+            if (active_page_number % 2 !== 0) {
+                active_page_number += 1;
+            }
+        } else {
+            if (active_page_number > 1) {
+                active_page_number -= 1;
+            }
+        }
+        wasSinglePage = currentIsSingle;
+    }
+
+    if (active_page_number > 0) {
+        updateNotesView();
+        renderCurrentPages();
     }
 });
