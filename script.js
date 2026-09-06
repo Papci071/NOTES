@@ -19,30 +19,6 @@ const provider = new GoogleAuthProvider();
 provider.addScope("https://www.googleapis.com/auth/drive.file");
 
 
-let isRefreshing = false;
-
-async function refreshDriveToken() {
-    if (isRefreshing) return false;
-    isRefreshing = true;
-
-    try {
-        const result = await signInWithPopup(auth, provider);
-        const credential = GoogleAuthProvider.credentialFromResult(result);
-        
-        if (credential && credential.accessToken) {
-            accessToken = credential.accessToken;
-            sessionStorage.setItem("drive_token", accessToken);
-            isRefreshing = false;
-            return true;
-        }
-    } catch (err) {
-        console.error("Błąd podczas odnawiania sesji Google Drive:", err);
-    }
-
-    isRefreshing = false;
-    return false;
-}
-
 async function driveFetch(url, options = {}) {
     if (!options.headers) options.headers = {};
     options.headers["Authorization"] = `Bearer ${accessToken}`;
@@ -50,16 +26,9 @@ async function driveFetch(url, options = {}) {
     let res = await fetch(url, options);
 
     if (res.status === 401) {
-        console.warn("Wykryto 401. Próba automatycznego odświeżenia tokena...");
-        const refreshed = await refreshDriveToken();
-
-        if (refreshed) {
-            options.headers["Authorization"] = `Bearer ${accessToken}`;
-            res = await fetch(url, options);
-        } else {
-            await logoutUser();
-            throw new Error("Sesja wygasła. Wymagane ponowne logowanie.");
-        }
+        console.warn("Sesja wygasła (401). Wylogowywanie...");
+        await logoutUser();
+        throw new Error("Sesja wygasła. Zaloguj się ponownie.");
     }
 
     return res;
@@ -196,6 +165,7 @@ async function logoutUser() {
 
     document.getElementById("login_overlay").style.display = "flex";
     document.getElementById("login_window").style.display = "block";
+    document.body.classList.remove("no-scroll");
 }
 
 document.getElementById("logout_btn").addEventListener("click", logoutUser);
@@ -478,6 +448,7 @@ document.addEventListener("click", function(e) {
 
         LoadFiles(e.target.parentElement.id);
         document.getElementById("notes_tab").classList.add("active");
+        document.body.classList.add("no-scroll");
         document.getElementById("notes_display_name").innerText = e.target.nextElementSibling.textContent;
 
 
@@ -493,6 +464,7 @@ document.addEventListener("click", function(e) {
     }
     if(e.target.closest("#close_notes_tab")){
         document.getElementById("notes_tab").classList.remove("active");
+        document.body.classList.remove("no-scroll");
         currentQueueId++;
 
         active_page_number = 0;

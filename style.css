@@ -384,7 +384,7 @@ hr{
     justify-content: center;
     align-items: center;
     align-content: center;
-    overflow: auto;
+    overflow: hidden;
 
 }
 
@@ -987,4 +987,18 @@ hr{
     font-weight: bold;
     color: #2c4d4e;
     font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+body.no-scroll {
+    overflow: hidden !important;
+    height: 100vh !important;
+}
+
+#notes_tab {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+#notes_tab::-webkit-scrollbar {
+    display: none;
 }
