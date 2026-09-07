@@ -45,7 +45,7 @@
         <form>
             <div class="form_row">
                 <label for="input_name"><span>Nazwa</span> <span>folderu:</span></label>
-                <input type="text" value="NAZWA" id="input_name" name="input_name" maxlength="15">
+                <input type="text" value="NAZWA" id="input_name" name="input_name" maxlength="12">
             </div>
 
             <div class="form_row">
@@ -74,7 +74,6 @@
         </form>
         <p>*Kolor może zostać przykryty prze grafikę, kolor aplikuje się również jako kolor okładki notesu</p>
     </div>
-
 
     <div id="notes_tab">
         
@@ -156,14 +155,54 @@
 
     </div>
 
-
-
     <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true">
         <filter id="brush-edge">
             <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="4" result="noise" />
             <feDisplacementMap in="SourceGraphic" in2="noise" scale="24" xChannelSelector="R" yChannelSelector="G" />
         </filter>
     </svg>
+
+    <div id="edit_folder_context_menu">
+        <div class="edit_folder_option" id="ctx_rename">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                <path d="m15 5 4 4"/>
+            </svg>
+            <span>Zmień nazwę</span>
+        </div>
+
+        <div class="edit_folder_option" id="ctx_change_color">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
+                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
+                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
+                <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
+                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+            </svg>
+            <span>Zmień kolor</span>
+        </div>
+
+        <div class="edit_folder_option" id="ctx_change_image">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                <circle cx="9" cy="9" r="2"/>
+                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+            </svg>
+            <span>Zmień grafikę</span>
+        </div>
+
+        <div class="edit_folder_option delete-opt" id="ctx_delete">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18"/>
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                <line x1="10" x2="10" y1="11" y2="17"/>
+                <line x1="14" x2="14" y1="11" y2="17"/>
+            </svg>
+            <span>Usuń</span>
+        </div>
+    </div>
+
 
     <script type="module" src="script.js"></script>
     </body>

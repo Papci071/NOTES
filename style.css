@@ -52,6 +52,11 @@ body::after {
     flex-direction: column;
     align-items: center;
     gap: 27px;
+
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .folder_image {
@@ -106,12 +111,6 @@ body::after {
         margin-top: -30px;
         font-size: 13px;
     }
-}
-
-
-.folder_name{
-    color: black;
-    font-family:Verdana, Geneva, Tahoma, sans-serif;
 }
 
 #folder_add {
@@ -1002,3 +1001,106 @@ body.no-scroll {
 #notes_tab::-webkit-scrollbar {
     display: none;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#edit_folder_context_menu {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 676767;
+    background-color:rgb(136, 175, 182);
+    border-radius: 10px;
+    padding: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    min-width: 170px;
+    user-select: none;
+}
+
+.edit_folder_option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: Verdana, sans-serif;
+    font-size: 14px;
+    color: #2c4d4e;
+    transition: background-color 0.15s ease;
+}
+
+.edit_folder_option:hover {
+    background-color: rgb(118, 168, 179);
+}
+
+.edit_folder_option.delete-opt {
+    color: #c95364;
+}
+
+.edit_folder_option.delete-opt:hover {
+    background-color: rgb(103, 145, 155);
+}
+
+.edit_folder_option svg {
+    flex-shrink: 0;
+}
+
+
+.folder_name{
+    color: black;
+    font-family:Verdana, Geneva, Tahoma, sans-serif;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: inherit;
+    text-align: center;
+
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    pointer-events: none;
+
+}
+
+.rename-spinner {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(44, 77, 78, 0.25);
+    border-top-color: #2c4d4e;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    pointer-events: none;
+    z-index: 10;
+}
+
+
+
+
+
+
+
+
+
+
+

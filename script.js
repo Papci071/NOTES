@@ -82,9 +82,12 @@ if (ie) {
     newFolderImage.style.backgroundRepeat = "no-repeat";
   }
 
-const newFolderName = document.createElement("div");
+const newFolderName = document.createElement("input");
+newFolderName.type = "text";
 newFolderName.className = "folder_name";
-if (ne) newFolderName.textContent = ne;
+newFolderName.readOnly = true;
+newFolderName.maxLength = 12;
+if (ne) newFolderName.value = ne;
 
 newFolder.appendChild(newFolderImage);
 newFolder.appendChild(newFolderName);
@@ -449,7 +452,7 @@ document.addEventListener("click", function(e) {
         LoadFiles(e.target.parentElement.id);
         document.getElementById("notes_tab").classList.add("active");
         document.body.classList.add("no-scroll");
-        document.getElementById("notes_display_name").innerText = e.target.nextElementSibling.textContent;
+        document.getElementById("notes_display_name").innerText = e.target.nextElementSibling.value;
 
 
         document.getElementById("notes_top_visual").style.backgroundColor = e.target.style.backgroundColor;
@@ -821,9 +824,6 @@ document.getElementById("input_append_files").addEventListener("change", async f
     }
 });
 
-
-
-
 let wasSinglePage = isSinglePage();
 
 window.addEventListener("resize", () => {
@@ -847,3 +847,341 @@ window.addEventListener("resize", () => {
         renderCurrentPages();
     }
 });
+
+async function updateFolderSettings(discName, changeType, newValue){
+    if (!accessToken || !appFolderId) return;
+
+    try {
+        const discQuery = encodeURIComponent(`'${appFolderId}' in parents and name = '${discName}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`);
+        const discRes = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${discQuery}&fields=files(id)`);
+        const discData = await discRes.json();
+        if (!discData.files || discData.files.length === 0) return;
+
+        const discFolderGoogleId = discData.files[0].id;
+
+        const settingsFolderQuery = encodeURIComponent(`'${discFolderGoogleId}' in parents and name = 'settings' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`);
+        const settingsFolderRes = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${settingsFolderQuery}&fields=files(id)`);
+        const settingsFolderData = await settingsFolderRes.json();
+        if (!settingsFolderData.files || settingsFolderData.files.length === 0) return;
+
+        const settingsFolderGoogleId = settingsFolderData.files[0].id;
+
+        const fileQuery = encodeURIComponent(`'${settingsFolderGoogleId}' in parents and name = 'settings.json' and trashed = false`);
+        const fileRes = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${fileQuery}&fields=files(id)`);
+        const fileData = await fileRes.json();
+        if (!fileData.files || fileData.files.length === 0) return;
+
+        const settingsFileId = fileData.files[0].id;
+
+        const currentDataRes = await driveFetch(`https://www.googleapis.com/drive/v3/files/${settingsFileId}?alt=media`);
+        const settingsJson = await currentDataRes.json();
+
+        settingsJson[changeType] = newValue;
+
+        const updatedBlob = new Blob([JSON.stringify(settingsJson, null, 2)], { type: "application/json" });
+        await driveFetch(`https://www.googleapis.com/upload/drive/v3/files/${settingsFileId}?uploadType=media`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: updatedBlob
+        });
+
+        console.log(`wartość ${changeType} folderu ${discName} zmieniona na ${newValue}`);
+    } catch (err) {
+        console.error("Błąd podczas aktualizacji settings.json:", err);
+    }
+    
+
+}
+
+
+let efcmActive = false;
+let selectedFolderId = null;
+
+const edit_folder_context_menu =  document.getElementById("edit_folder_context_menu");
+
+window.addEventListener("contextmenu", function(e) {
+    e.preventDefault();
+
+    if (efcmActive && !e.target.closest("#edit_folder_context_menu")){
+        edit_folder_context_menu.style.display="none";
+        efcmActive = false;
+    }
+    
+    if (e.target.closest(".folder")){
+
+        selectedFolderId = e.target.closest(".folder").id;
+        if (!selectedFolderId.includes("disc_id_")) return;
+        console.log(selectedFolderId);
+
+        edit_folder_context_menu.style.top = `${e.clientY}px`;
+        edit_folder_context_menu.style.left = `${e.clientX}px`;
+        
+
+        edit_folder_context_menu.style.display="block";
+        efcmActive = true;
+
+    }
+});
+
+window.addEventListener("click", function(e){
+    if (efcmActive && !e.target.closest("#edit_folder_context_menu")){
+        edit_folder_context_menu.style.display="none";
+        efcmActive = false;
+    }
+
+});
+
+
+let originalFolderName = "";
+let IsRenameing = false;
+let renameingFolderId = null;
+
+
+ctx_rename.addEventListener("click", function(e) {
+    IsRenameing = true;
+    renameingFolderId = selectedFolderId;
+    edit_folder_context_menu.style.display = "none";
+    efcmActive = false;
+
+    const folderInput = document.querySelector(`#${renameingFolderId} .folder_name`);
+    if (folderInput) {
+        originalFolderName = folderInput.value.trim();
+        folderInput.readOnly = false;
+        folderInput.style.pointerEvents = "auto";
+        folderInput.focus();
+        folderInput.select();
+    }
+});
+
+async function finishRenaming() {
+    if (!IsRenameing || !renameingFolderId) return;
+
+    const folderId = renameingFolderId;
+    IsRenameing = false;
+    renameingFolderId = null;
+
+    const folderElement = document.getElementById(folderId);
+    const currentInput = folderElement ? folderElement.querySelector(".folder_name") : null;
+    if (!currentInput) return;
+
+    currentInput.readOnly = true;
+    currentInput.style.pointerEvents = "none";
+
+    let newName = currentInput.value.trim();
+    if (!newName) {
+        newName = originalFolderName || "Bez nazwy";
+        currentInput.value = newName;
+    }
+
+    if (newName !== originalFolderName) {
+        const spinner = document.createElement("div");
+        spinner.className = "rename-spinner";
+        folderElement.appendChild(spinner);
+
+        try {
+            await updateFolderSettings(folderId,"name", newName);
+        } finally {
+            spinner.remove();
+        }
+    }
+}
+
+window.addEventListener("mouseup", function(e) {
+    if (!IsRenameing) return;
+
+    if (!e.target.closest(`#${renameingFolderId}`) || e.target.classList.contains("folder_image")) {
+        finishRenaming();
+    }
+});
+
+window.addEventListener("keydown", function(e) {
+    if (e.key === "Enter" && IsRenameing) {
+        finishRenaming();
+    }
+});
+
+const ctx_change_color = document.getElementById("ctx_change_color");
+
+ctx_change_color.addEventListener("click", function(e) {
+    edit_folder_context_menu.style.display = "none";
+    efcmActive = false;
+
+    const folderId = selectedFolderId;
+    if (!folderId) return;
+
+    const folderImage = document.querySelector(`#${folderId} .folder_image`);
+    
+    const colorPicker = document.createElement("input");
+    colorPicker.type = "color";
+    colorPicker.value = folderImage.style.backgroundColor;
+
+    colorPicker.addEventListener("change", async function() {
+        const selectedColor = colorPicker.value;
+        console.log("Wybrany nowy kolor:", selectedColor);
+
+        folderImage.style.backgroundColor = selectedColor;
+        colorPicker.remove()
+
+        console.log(folderId)
+
+        const spinner = document.createElement("div");
+        spinner.className = "rename-spinner";
+        document.getElementById(folderId).appendChild(spinner);
+
+        try {
+            await updateFolderSettings(folderId,"color", selectedColor);
+        } finally {
+            spinner.remove();
+        }
+
+
+    });
+
+
+    if ("showPicker" in HTMLInputElement.prototype) {
+        colorPicker.showPicker();
+    } else {
+        colorPicker.click();
+    }
+});
+
+ctx_change_image.addEventListener("click", function(e){
+    edit_folder_context_menu.style.display = "none";
+    efcmActive = false;
+
+    const folderId = selectedFolderId;
+    if (!folderId) return;
+
+    const imagePicker = document.createElement("input");
+    imagePicker.type = "file";
+    imagePicker.accept="image/*";
+
+    imagePicker.addEventListener("change", async function(){
+        const imageFile = imagePicker.files[0];
+        if (!imageFile) return;
+
+        const newImgUrl = URL.createObjectURL(imageFile);
+        const folderImage = document.querySelector(`#${folderId} .folder_image`);
+        if (folderImage) {
+            folderImage.style.backgroundImage = `url("${newImgUrl}")`;
+            folderImage.style.backgroundSize = "cover";
+            folderImage.style.backgroundPosition = "center";
+            folderImage.style.backgroundRepeat = "no-repeat";
+        }
+
+        const spinner = document.createElement("div");
+        spinner.className = "rename-spinner";
+        document.getElementById(folderId).appendChild(spinner);
+
+        try {
+            await updateFolderSettings(folderId,"hasImage", true);
+            await updateFolderImg(folderId, imageFile);
+        } finally {
+            spinner.remove();
+        }
+        
+    });
+
+
+    if ("showPicker" in HTMLInputElement.prototype) {
+        imagePicker.showPicker();
+    } else {
+        imagePicker.click();
+    }
+
+
+});
+
+async function updateFolderImg(discName, imageFile) {
+    if (!accessToken || !appFolderId || !imageFile) return;
+
+    try {
+        const discQuery = encodeURIComponent(`'${appFolderId}' in parents and name = '${discName}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`);
+        const discRes = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${discQuery}&fields=files(id)`);
+        const discData = await discRes.json();
+        if (!discData.files || discData.files.length === 0) return;
+
+        const discFolderGoogleId = discData.files[0].id;
+
+        const settingsFolderQuery = encodeURIComponent(`'${discFolderGoogleId}' in parents and name = 'settings' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`);
+        const settingsFolderRes = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${settingsFolderQuery}&fields=files(id)`);
+        const settingsFolderData = await settingsFolderRes.json();
+        if (!settingsFolderData.files || settingsFolderData.files.length === 0) return;
+
+        const settingsFolderGoogleId = settingsFolderData.files[0].id;
+
+        const oldImgQuery = encodeURIComponent(`'${settingsFolderGoogleId}' in parents and name contains 'folder_img.' and trashed = false`);
+        const oldImgRes = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${oldImgQuery}&fields=files(id,name)`);
+        const oldImgData = await oldImgRes.json();
+
+        if (oldImgData.files && oldImgData.files.length > 0) {
+            for (const file of oldImgData.files) {
+                await driveFetch(`https://www.googleapis.com/drive/v3/files/${file.id}`, {
+                    method: "DELETE"
+                });
+            }
+        }
+
+        const ext = imageFile.name.split(".").pop();
+        const newFileName = `folder_img.${ext}`;
+        await uploadFile(newFileName, imageFile, settingsFolderGoogleId, imageFile.type);
+
+        console.log(`Grafika ${newFileName} zaktualizowana na dysku`);
+    } catch (err) {
+        console.error("Błąd podczas aktualizowania grafiki na Dysku:", err);
+    }
+}
+
+ctx_delete.addEventListener("click",async function(e){
+    edit_folder_context_menu.style.display = "none";
+    efcmActive = false;
+
+    const folderId = selectedFolderId;
+    if (!folderId) return;
+
+    const folderName = document.querySelector(`#${folderId} .folder_name`).value;
+    
+    if (!confirm(`Ta akcja spowoduje usunięcie folderu "${folderName}" i wszystkich plików z nim powiązanych. Czy jesteś pewny tej akcji?`)) return;
+
+        const spinner = document.createElement("div");
+        spinner.className = "rename-spinner";
+        document.getElementById(folderId).appendChild(spinner);
+
+        try {
+            await deleteFolder(folderId);
+            document.querySelector(`#${folderId}`).remove();
+
+        } catch (err) {
+            spinner.remove();
+        }
+
+});
+
+async function deleteFolder(discName) {
+
+    if (!accessToken || !appFolderId) return;
+
+    try {
+        const discQuery = encodeURIComponent(`'${appFolderId}' in parents and name = '${discName}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`);
+        const discRes = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${discQuery}&fields=files(id)`);
+        const discData = await discRes.json();
+        if (!discData.files || discData.files.length === 0) return;
+
+        const discFolderGoogleId = discData.files[0].id;
+
+        await driveFetch(`https://www.googleapis.com/drive/v3/files/${discFolderGoogleId}`, {
+            method: "DELETE"
+        });
+
+        console.log(`Folder ${discName} usunięty`);
+    } catch (err) {
+        console.error("Błąd podczas usuwania folderu", err);
+        throw err;
+    }
+    
+};
+
+
+
