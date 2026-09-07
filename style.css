@@ -1002,26 +1002,9 @@ body.no-scroll {
     display: none;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #edit_folder_context_menu {
     display: none;
-    position: absolute;
+    position: fixed;
     left: 0;
     top: 0;
     z-index: 676767;
@@ -1061,7 +1044,6 @@ body.no-scroll {
 .edit_folder_option svg {
     flex-shrink: 0;
 }
-
 
 .folder_name{
     color: black;

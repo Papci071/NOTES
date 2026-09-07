@@ -891,10 +891,7 @@ async function updateFolderSettings(discName, changeType, newValue){
     } catch (err) {
         console.error("Błąd podczas aktualizacji settings.json:", err);
     }
-    
-
 }
-
 
 let efcmActive = false;
 let selectedFolderId = null;
@@ -904,24 +901,35 @@ const edit_folder_context_menu =  document.getElementById("edit_folder_context_m
 window.addEventListener("contextmenu", function(e) {
     e.preventDefault();
 
-    if (efcmActive && !e.target.closest("#edit_folder_context_menu")){
-        edit_folder_context_menu.style.display="none";
+    if (efcmActive && !e.target.closest("#edit_folder_context_menu")) {
+        edit_folder_context_menu.style.display = "none";
         efcmActive = false;
     }
     
-    if (e.target.closest(".folder")){
-
+    if (e.target.closest(".folder")) {
         selectedFolderId = e.target.closest(".folder").id;
         if (!selectedFolderId.includes("disc_id_")) return;
-        console.log(selectedFolderId);
 
-        edit_folder_context_menu.style.top = `${e.clientY}px`;
-        edit_folder_context_menu.style.left = `${e.clientX}px`;
-        
-
-        edit_folder_context_menu.style.display="block";
+        edit_folder_context_menu.style.display = "block";
         efcmActive = true;
 
+        const menuWidth = edit_folder_context_menu.offsetWidth;
+        const menuHeight = edit_folder_context_menu.offsetHeight;
+
+        const padding = 15;
+
+        let posX = e.clientX;
+        if (posX + menuWidth > window.innerWidth - padding) {
+            posX = window.innerWidth - menuWidth - padding;
+        }
+
+        let posY = e.clientY;
+        if (posY + menuHeight > window.innerHeight - padding) {
+            posY = window.innerHeight - menuHeight - padding;
+        }
+
+        edit_folder_context_menu.style.left = `${Math.max(padding, posX)}px`;
+        edit_folder_context_menu.style.top = `${Math.max(padding, posY)}px`;
     }
 });
 
