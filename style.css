@@ -1238,10 +1238,8 @@ body.no-scroll {
     background-color: transparent !important;
 }
 
-/* BIAŁE PŁÓTNO */
 #notes_tab.easel-mode #easel_page.canvas-mode {
     width: 485px !important;
-    max-width: 90vw !important;
     height: 600px !important;
     background-color: white !important;
     border: 1px solid rgba(0, 0, 0, 0.2) !important;
@@ -1250,9 +1248,6 @@ body.no-scroll {
     flex-shrink: 0 !important;
 }
 
-/* OBRAZEK:
-   - Domyślnie na dużym ekranie ma maks 600px wysokości i mieści się w sztaludze
-   - Zmniejsza się automatycznie, gdy jest za szeroki lub za wysoki */
 #notes_tab.easel-mode #easel_page img {
     height: auto !important;
     width: auto !important;
