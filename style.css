@@ -383,7 +383,7 @@ hr{
     justify-content: center;
     align-items: center;
     align-content: center;
-    overflow: hidden;
+    overflow: visible;
 
 }
 
@@ -1076,13 +1076,315 @@ body.no-scroll {
     z-index: 10;
 }
 
+#easel_display {
+    grid-column: 2;
+    grid-row: 1;
+    position: relative;
+    width: 1100px;
+    height: 835px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform: translateY(40px);
+}
+
+#easel_legs {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-end;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    z-index: 1;
+}
 
 
+#left_easel_leg,
+#middle_easel_leg,
+#right_easel_leg {
+    width: 48px;
+    height: 70%;
+    background-color: rgb(158, 66, 43);
+    border: 7px solid black;
 
+}
 
+#left_easel_leg {
+    transform: rotate(12deg) skewY(-12deg);
+    transform-origin: top center;
+}
 
+#right_easel_leg {
+    transform: rotate(-12deg) skewY(12deg);
+    transform-origin: top center;
+}
 
+#middle_easel_leg{
+    height: 100%;
+    transform: translateY(-80px);
+}
 
+#easel_display_think {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -70%);
+    width: 1100px;
+    height: 670px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+}
 
+#easel_bar{
 
+    width: 460px;
+    height: 48px;
+    background-color: rgb(158, 66, 43);
+    border: 7px solid black;
 
+}
+
+#easel_page {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+}
+
+#easel_page img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: contain;
+    object-position: bottom center;
+
+    display: block;
+    user-select: none;
+    pointer-events: none;
+}
+
+#notes_tab.easel-mode {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: clamp(15px, 3vw, 40px) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+}
+
+#notes_tab.easel-mode #easel_display {
+    position: relative !important;
+    width: auto !important;
+    min-width: 460px !important;
+    height: 835px !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+    transform: translateY(20px) !important;
+    transform-origin: center center !important;
+    transition: transform 0.2s ease !important;
+}
+
+#notes_tab.easel-mode #easel_legs {
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: 1 !important;
+}
+
+#notes_tab.easel-mode #middle_easel_leg {
+    transform: translateY(-60px) !important;
+}
+
+#notes_tab.easel-mode #easel_display_think {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    transform: translateY(-80px) !important;
+    width: auto !important;
+    min-width: 460px !important;
+    height: 620px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    z-index: 10 !important;
+}
+
+#notes_tab.easel-mode #easel_bar {
+    width: 460px !important;
+    min-width: 460px !important;
+    max-width: 460px !important;
+    height: 48px !important;
+    background-color: rgb(158, 66, 43) !important;
+    border: 7px solid black !important;
+    flex-shrink: 0 !important;
+}
+
+#notes_tab.easel-mode #easel_page {
+    width: auto !important;
+    height: auto !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-end !important;
+    overflow: visible !important;
+    background-color: transparent !important;
+}
+
+/* BIAŁE PŁÓTNO */
+#notes_tab.easel-mode #easel_page.canvas-mode {
+    width: 485px !important;
+    max-width: 90vw !important;
+    height: 600px !important;
+    background-color: white !important;
+    border: 1px solid rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+}
+
+/* OBRAZEK:
+   - Domyślnie na dużym ekranie ma maks 600px wysokości i mieści się w sztaludze
+   - Zmniejsza się automatycznie, gdy jest za szeroki lub za wysoki */
+#notes_tab.easel-mode #easel_page img {
+    height: auto !important;
+    width: auto !important;
+    max-height: 600px !important;
+    max-width: calc(100vw - 40px) !important;
+    object-fit: contain !important;
+    display: block !important;
+}
+
+#notes_tab.easel-mode #previous_page,
+#notes_tab.easel-mode #next_page {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+    flex-shrink: 0 !important;
+    z-index: 200 !important;
+    margin: 0 !important;
+}
+
+#notes_tab.easel-mode #previous_page:hover,
+#notes_tab.easel-mode #next_page:hover {
+    transform: scale(1.06) !important;
+}
+
+/* Skalowanie pionowe przy niskich ekranach */
+@media (max-height: 850px) {
+    #notes_tab.easel-mode #easel_display {
+        transform: translateY(15px) scale(0.88) !important;
+    }
+}
+@media (max-height: 720px) {
+    #notes_tab.easel-mode #easel_display {
+        transform: translateY(5px) scale(0.76) !important;
+    }
+}
+@media (max-height: 600px) {
+    #notes_tab.easel-mode #easel_display {
+        transform: translateY(0px) scale(0.64) !important;
+    }
+}
+
+/* UKŁAD MOBILNY: STRZAŁKI POD SPÓD */
+@media (max-width: 1200px) {
+    #notes_tab.easel-mode {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        align-content: center !important;
+        gap: 15px !important;
+        padding-bottom: 20px !important;
+    }
+
+    #notes_tab.easel-mode #easel_display {
+        order: 1 !important;
+        flex-basis: 100% !important;
+    }
+
+    #notes_tab.easel-mode #previous_page {
+        order: 2 !important;
+        margin-right: 15px !important;
+    }
+
+    #notes_tab.easel-mode #next_page {
+        order: 3 !important;
+        margin-left: 15px !important;
+    }
+}
+
+/* SKALOWANIE SZTALUGI ORAZ BLOKADA WYPADAJĄCEGO ZDJĘCIA (uwzględnia skalę kontenera) */
+@media (max-width: 850px) {
+    #notes_tab.easel-mode #easel_display {
+        transform: translateY(0px) scale(0.85) !important;
+        margin-bottom: -60px !important;
+    }
+    #notes_tab.easel-mode #easel_page img {
+        max-width: calc((100vw - 30px) / 0.85) !important;
+    }
+}
+
+@media (max-width: 650px) {
+    #notes_tab.easel-mode #easel_display {
+        transform: translateY(0px) scale(0.72) !important;
+        margin-bottom: -110px !important;
+    }
+    #notes_tab.easel-mode #easel_page img {
+        max-width: calc((100vw - 25px) / 0.72) !important;
+    }
+}
+
+@media (max-width: 520px) {
+    #notes_tab.easel-mode #easel_display {
+        transform: translateY(0px) scale(0.6) !important;
+        margin-bottom: -160px !important;
+    }
+    #notes_tab.easel-mode #easel_page img {
+        max-width: calc((100vw - 20px) / 0.6) !important;
+    }
+}
+
+@media (max-width: 400px) {
+    #notes_tab.easel-mode #easel_display {
+        transform: translateY(0px) scale(0.48) !important;
+        margin-bottom: -210px !important;
+    }
+    #notes_tab.easel-mode #easel_page img {
+        max-width: calc((100vw - 15px) / 0.48) !important;
+    }
+}
+
+@media (max-width: 320px) {
+    #notes_tab.easel-mode #easel_display {
+        transform: translateY(0px) scale(0.4) !important;
+        margin-bottom: -250px !important;
+    }
+    #notes_tab.easel-mode #easel_page img {
+        max-width: calc((100vw - 10px) / 0.4) !important;
+    }
+}
+
+#style_contex_menu {
+    display: none;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 676768;
+    background-color: rgb(136, 175, 182);
+    border-radius: 10px;
+    padding: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    min-width: 140px;
+    user-select: none;
+}

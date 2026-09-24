@@ -67,10 +67,11 @@ document.addEventListener("click", function(e) {
 const content = document.getElementById("content");
 const last_folder = document.getElementById("last_folder");
 
-function AddFolder(dics_id,ne,cr,ie){
+function AddFolder(dics_id,ne,cr,ie,st){
 const newFolder = document.createElement("div");
 newFolder.className = "folder";
 newFolder.id = dics_id;
+
 
 const newFolderImage = document.createElement("div");
 newFolderImage.className = "folder_image";
@@ -81,7 +82,7 @@ if (ie) {
     newFolderImage.style.backgroundPosition = "center";
     newFolderImage.style.backgroundRepeat = "no-repeat";
   }
-
+if (st) newFolderImage.classList.add(st);
 const newFolderName = document.createElement("input");
 newFolderName.type = "text";
 newFolderName.className = "folder_name";
@@ -279,6 +280,7 @@ submitBtn.addEventListener("click", async (e) => {
     const imgInput = document.getElementById("input_img");
     const defaultFiles = document.getElementById("input_default_files").files;
     const imgFile = imgInput.files.length > 0 ? imgInput.files[0] : null;
+    const style = document.getElementById("style_select").value;
 
     const progressContainer = document.getElementById("upload_progress_container");
     const progressFill = document.getElementById("progress_bar_fill");
@@ -296,7 +298,8 @@ submitBtn.addEventListener("click", async (e) => {
         const settingsData = {
             name: name,
             color: color,
-            hasImage: !!imgFile
+            hasImage: !!imgFile,
+            style: style
         };
         const settingsBlob = new Blob([JSON.stringify(settingsData, null, 2)], { type: "application/json" });
         await uploadFile("settings.json", settingsBlob, settingsFolderGoogleId, "application/json");
@@ -329,7 +332,7 @@ submitBtn.addEventListener("click", async (e) => {
             }
         }
 
-        AddFolder(discFolderIdName, name, color, localImgPreviewUrl);
+        AddFolder(discFolderIdName, name, color, localImgPreviewUrl, style);
         createForm.reset();
         create_folder_window.style.display = "none";
 
@@ -387,6 +390,7 @@ async function loadFolders() {
             let folderName = folder.name;
             let folderColor = "#C95364";
             let folderImgUrl = "";
+            let folderStyle = "notebook";
 
             const fetchTasks = [];
 
@@ -397,6 +401,7 @@ async function loadFolders() {
                     .then(data => {
                         if (data.name) folderName = data.name;
                         if (data.color) folderColor = data.color;
+                        if (data.style) folderStyle = data.style;
                     })
                     .catch(() => {})
                 );
@@ -420,13 +425,14 @@ async function loadFolders() {
                 discId: folder.name,
                 name: folderName,
                 color: folderColor,
-                imgUrl: folderImgUrl
+                imgUrl: folderImgUrl,
+                style: folderStyle
             };
         });
         const foldersToRender = await Promise.all(renderPromises);
         foldersToRender.forEach(folderData => {
             if (folderData) {
-                AddFolder(folderData.discId, folderData.name, folderData.color, folderData.imgUrl);
+                AddFolder(folderData.discId, folderData.name, folderData.color, folderData.imgUrl, folderData.style);
             }
         });
 
@@ -442,12 +448,27 @@ async function loadFolders() {
 
 
 //Otwieranie Widoku Notesu
+let currentFolderStyle = "notebook";
 
 document.addEventListener("click", function(e) {
 
     if (isUploading) return;
 
     if(e.target.classList.contains("folder_image")){
+
+        if (e.target.classList.contains("notebook")){
+            currentFolderStyle = "notebook";
+            document.getElementById("notes_tab").classList.remove("easel-mode");
+            document.getElementById("notes_display").style.display = "flex";
+            document.getElementById("easel_display").style.display = "none";
+        }
+        if (e.target.classList.contains("easel")){
+            currentFolderStyle = "easel";
+            document.getElementById("notes_tab").classList.add("easel-mode");
+            document.getElementById("easel_display").style.display = "flex";
+            document.getElementById("notes_display").style.display = "none";
+        }
+
 
         LoadFiles(e.target.parentElement.id);
         document.getElementById("notes_tab").classList.add("active");
@@ -463,10 +484,12 @@ document.addEventListener("click", function(e) {
 
         active_page_number = 0;
         updateNotesView();
+        renderCurrentPages();
 
     }
     if(e.target.closest("#close_notes_tab")){
         document.getElementById("notes_tab").classList.remove("active");
+        document.getElementById("notes_tab").classList.remove("easel-mode");
         document.body.classList.remove("no-scroll");
         currentQueueId++;
 
@@ -475,6 +498,13 @@ document.addEventListener("click", function(e) {
 
         document.getElementById("left_page").innerHTML = "";
         document.getElementById("right_page").innerHTML = "";
+        document.getElementById("easel_page").innerHTML = "";
+
+        document.getElementById("notes_display").style.display="none";
+        document.getElementById("easel_display").style.display="none";
+
+        document.getElementById("easel_page").classList.remove("canvas-mode");
+
     }
 
 
@@ -489,6 +519,7 @@ document.addEventListener("click", function(e) {
 let active_page_number = 0;
 
 function isSinglePage() {
+    if (currentFolderStyle === "easel") return true;
     return window.innerWidth <= 1190;
 }
 
@@ -514,6 +545,20 @@ function updateNotesView() {
     if (isLoadingFolderFiles) {
         hideBtn(prevBtn);
         hideBtn(nextBtn);
+        return;
+    }
+
+    if (currentFolderStyle === "easel") {
+        if (active_page_number === 0) {
+            hideBtn(prevBtn);
+        } else {
+            showBtn(prevBtn);
+        }
+        if (active_page_number >= currentNoteFiles.length) {
+            hideBtn(nextBtn);
+        } else {
+            showBtn(nextBtn);
+        }
         return;
     }
 
@@ -548,7 +593,7 @@ function updateNotesView() {
 
 document.getElementById("next_page").addEventListener("click", function() {
     const step = isSinglePage() ? 1 : 2;
-    const maxPage = isSinglePage() ? currentNoteFiles.length + 1 : (Math.floor(currentNoteFiles.length / 2) + 1) * 2;
+    const maxPage = currentFolderStyle === "easel" ? currentNoteFiles.length : (isSinglePage() ? currentNoteFiles.length + 1 : (Math.floor(currentNoteFiles.length / 2) + 1) * 2);
 
     if (active_page_number < maxPage) {
         active_page_number += step;
@@ -568,6 +613,25 @@ document.getElementById("previous_page").addEventListener("click", function() {
     }
 });
 
+
+document.addEventListener('keydown', (event) => {
+
+    switch (event.key) {
+        case 'ArrowLeft':
+            document.getElementById("previous_page").click();
+            break;
+        case 'ArrowRight':
+            document.getElementById("next_page").click();
+            break;
+        case 'Escape':
+            document.getElementById("close_notes_tab").click();
+            break;
+  }
+});
+
+
+
+
 let currentNoteFiles = [];
 let currentDiscFolderId = null;
 let currentQueueId = 0;
@@ -585,6 +649,7 @@ async function LoadFiles(disc_name) {
 
     isLoadingFolderFiles = true;
     updateNotesView();
+    renderCurrentPages();
 
     console.log("Ładowanie plików dla folderu:", disc_name);
 
@@ -617,6 +682,7 @@ async function LoadFiles(disc_name) {
 
         isLoadingFolderFiles = false;
         updateNotesView();
+        renderCurrentPages();
 
         if (currentNoteFiles[0]) await getFileBlobUrl(currentNoteFiles[0].id);
         if (currentNoteFiles[1]) await getFileBlobUrl(currentNoteFiles[1].id);
@@ -652,7 +718,23 @@ async function getFileBlobUrl(fileId) {
 async function renderCurrentPages() {
     const leftContainer = document.getElementById("left_page");
     const rightContainer = document.getElementById("right_page");
+    const easelContainer = document.getElementById("easel_page");
 
+    if (currentFolderStyle === "easel") {
+        leftContainer.innerHTML = "";
+        rightContainer.innerHTML = "";
+
+        if (isLoadingFolderFiles) {
+            easelContainer.classList.add("canvas-mode");
+            easelContainer.innerHTML = '<div class="page-loader"></div>';
+            return;
+        }
+
+        renderSinglePage(easelContainer, active_page_number);
+        return;
+    }
+
+    easelContainer.innerHTML = "";
     if (active_page_number === 0) {
         leftContainer.innerHTML = "";
         rightContainer.innerHTML = "";
@@ -669,13 +751,15 @@ async function renderCurrentPages() {
         renderSinglePage(leftContainer, leftFileIndex);
         renderSinglePage(rightContainer, rightFileIndex);
     }
-    
 }
 
 async function renderSinglePage(container, fileIndex) {
     container.innerHTML = "";
 
     if (fileIndex === currentNoteFiles.length) {
+        if (currentFolderStyle === "easel") {
+            container.classList.add("canvas-mode");
+        }
         const addBtn = document.createElement("div");
         addBtn.className = "add-page-btn";
         addBtn.innerHTML = `
@@ -698,6 +782,9 @@ async function renderSinglePage(container, fileIndex) {
     const fileMeta = currentNoteFiles[fileIndex];
     if (!fileMeta) return;
 
+    if (currentFolderStyle === "easel") {
+        container.classList.add("canvas-mode");
+    }
     const spinner = document.createElement("div");
     spinner.className = "page-loader";
     container.appendChild(spinner);
@@ -706,6 +793,9 @@ async function renderSinglePage(container, fileIndex) {
     if (container.contains(spinner)) {
         container.innerHTML = "";
         if (imgUrl) {
+            if (currentFolderStyle === "easel") {
+                container.classList.remove("canvas-mode");
+            }
             const img = document.createElement("img");
             img.src = imgUrl;
             img.alt = fileMeta.name;
@@ -900,6 +990,10 @@ const edit_folder_context_menu =  document.getElementById("edit_folder_context_m
 
 window.addEventListener("contextmenu", function(e) {
     e.preventDefault();
+
+    if (style_contex_menu) {
+        style_contex_menu.style.display = "none";
+    }
 
     if (efcmActive && !e.target.closest("#edit_folder_context_menu")) {
         edit_folder_context_menu.style.display = "none";
@@ -1191,5 +1285,70 @@ async function deleteFolder(discName) {
     
 };
 
+const style_contex_menu = document.getElementById("style_contex_menu");
+let styleFolderId = null;
 
+ctx_change_style.addEventListener("click", function(e) {
+    e.stopPropagation();
 
+    styleFolderId = selectedFolderId;
+    if (!styleFolderId) return;
+
+    style_contex_menu.style.display = "block";
+
+    const parentRect = ctx_change_style.getBoundingClientRect();
+    const menuWidth = style_contex_menu.offsetWidth || 140;
+    const padding = 10;
+
+    let posX = parentRect.right + 5;
+    let posY = parentRect.top;
+
+    if (posX + menuWidth > window.innerWidth - padding) {
+        posX = parentRect.left - menuWidth - 5;
+    }
+
+    const menuHeight = style_contex_menu.offsetHeight || 80;
+    if (posY + menuHeight > window.innerHeight - padding) {
+        posY = window.innerHeight - menuHeight - padding;
+    }
+
+    style_contex_menu.style.left = `${Math.max(padding, posX)}px`;
+    style_contex_menu.style.top = `${Math.max(padding, posY)}px`;
+});
+
+window.addEventListener("click", function(e) {
+    if (!e.target.closest("#style_contex_menu") && !e.target.closest("#edit_folder_context_menu")) {
+        style_contex_menu.style.display = "none";
+        edit_folder_context_menu.style.display = "none";
+        efcmActive = false;
+    }
+});
+
+async function applyNewStyle(newStyle) {
+    style_contex_menu.style.display = "none";
+    edit_folder_context_menu.style.display = "none";
+    efcmActive = false;
+
+    const folderId = styleFolderId;
+    if (!folderId) return;
+
+    const folderImg = document.querySelector(`#${folderId} .folder_image`);
+    if (folderImg) {
+        folderImg.classList.remove("notebook", "easel");
+        folderImg.classList.add(newStyle);
+    }
+
+    const spinner = document.createElement("div");
+    spinner.className = "rename-spinner";
+    const folderElem = document.getElementById(folderId);
+    if (folderElem) folderElem.appendChild(spinner);
+
+    try {
+        await updateFolderSettings(folderId, "style", newStyle);
+    } finally {
+        spinner.remove();
+    }
+}
+
+document.getElementById("notebook").addEventListener("click", () => applyNewStyle("notebook"));
+document.getElementById("easel").addEventListener("click", () => applyNewStyle("easel"));
