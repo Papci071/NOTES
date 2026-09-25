@@ -549,16 +549,11 @@ function updateNotesView() {
     }
 
     if (currentFolderStyle === "easel") {
-        if (active_page_number === 0) {
-            hideBtn(prevBtn);
-        } else {
-            showBtn(prevBtn);
-        }
-        if (active_page_number >= currentNoteFiles.length) {
-            hideBtn(nextBtn);
-        } else {
-            showBtn(nextBtn);
-        }
+        if (active_page_number === 0) hideBtn(prevBtn);
+        else showBtn(prevBtn);
+
+        if (active_page_number >= currentNoteFiles.length) hideBtn(nextBtn);
+        else showBtn(nextBtn);
         return;
     }
 
@@ -583,34 +578,17 @@ function updateNotesView() {
 
         const maxPage = isSinglePage() ? currentNoteFiles.length + 1 : (Math.floor(currentNoteFiles.length / 2) + 1) * 2;
 
-        if (active_page_number >= maxPage) {
-            hideBtn(nextBtn);
-        } else {
-            showBtn(nextBtn);
-        }
+        if (active_page_number >= maxPage) hideBtn(nextBtn);
+        else showBtn(nextBtn);
     }
 }
 
 document.getElementById("next_page").addEventListener("click", function() {
-    const step = isSinglePage() ? 1 : 2;
-    const maxPage = currentFolderStyle === "easel" ? currentNoteFiles.length : (isSinglePage() ? currentNoteFiles.length + 1 : (Math.floor(currentNoteFiles.length / 2) + 1) * 2);
-
-    if (active_page_number < maxPage) {
-        active_page_number += step;
-        updateNotesView();
-        renderCurrentPages();
-    }
+    handleNext();
 });
 
-
 document.getElementById("previous_page").addEventListener("click", function() {
-    const step = isSinglePage() ? 1 : 2;
-
-    if (active_page_number > 0) {
-        active_page_number = Math.max(0, active_page_number - step);
-        updateNotesView();
-        renderCurrentPages();
-    }
+    handlePrev();
 });
 
 
@@ -1352,3 +1330,453 @@ async function applyNewStyle(newStyle) {
 
 document.getElementById("notebook").addEventListener("click", () => applyNewStyle("notebook"));
 document.getElementById("easel").addEventListener("click", () => applyNewStyle("easel"));
+
+
+
+// Animacja Przerzucania Kartek
+
+function getCurrentRotationY(element) {
+    const style = window.getComputedStyle(element);
+    const transform = style.transform;
+    if (!transform || transform === 'none') return 0;
+
+    const values = transform.split('(')[1].split(')')[0].split(',');
+
+    if (values.length === 16) {
+        const a = parseFloat(values[0]);
+        const b = parseFloat(values[2]);
+        const rad = Math.atan2(-b, a);
+        return rad * (180 / Math.PI);
+    } else if (values.length === 6) {
+        const a = parseFloat(values[0]);
+        return a < 0 ? 180 : 0;
+    }
+    return 0;
+}
+
+let activeSheets = [];
+let sheetZIndexCounter = 1000;
+
+function spawnNewSheet(direction) {
+    const overlayContainer = document.getElementById("flip_overlay_container");
+    if (!overlayContainer) return;
+
+    const maxPage = (Math.floor(currentNoteFiles.length / 2) + 1) * 2;
+
+    if (direction === 'next' && active_page_number >= maxPage) return;
+    if (direction === 'prev' && active_page_number <= 0) return;
+
+    let frontFileIdx, backFileIdx, underFileIdx;
+    let basePage = active_page_number;
+    let targetPage;
+
+    const leftContainer = document.getElementById("left_page");
+    const rightContainer = document.getElementById("right_page");
+
+    if (direction === 'next') {
+        frontFileIdx = active_page_number - 1;
+        backFileIdx = active_page_number;
+        underFileIdx = active_page_number + 1;
+        targetPage = active_page_number + 2;
+
+        rightContainer.innerHTML = "";
+    } else {
+        frontFileIdx = active_page_number - 2;
+        backFileIdx = active_page_number - 3;
+        underFileIdx = active_page_number - 4;
+        targetPage = active_page_number - 2;
+
+        leftContainer.innerHTML = "";
+    }
+
+    sheetZIndexCounter += 10;
+
+    const staticSheet = document.createElement("div");
+    staticSheet.className = `fake-static-sheet ${direction === 'next' ? 'pos-right' : 'pos-left'}`;
+    staticSheet.style.zIndex = sheetZIndexCounter - 5;
+    renderFaceContent(staticSheet, underFileIdx);
+    overlayContainer.appendChild(staticSheet);
+
+    const sheet = document.createElement("div");
+    sheet.className = `flipping-sheet ${direction === 'next' ? 'flip-next' : 'flip-prev'}`;
+    sheet.style.zIndex = sheetZIndexCounter;
+
+    const frontFace = document.createElement("div");
+    frontFace.className = "flip-face flip-front";
+    renderFaceContent(frontFace, frontFileIdx);
+
+    const backFace = document.createElement("div");
+    backFace.className = "flip-face flip-back";
+    renderFaceContent(backFace, backFileIdx);
+
+    sheet.appendChild(frontFace);
+    sheet.appendChild(backFace);
+    overlayContainer.appendChild(sheet);
+
+    active_page_number = targetPage;
+    updateNotesView();
+
+    const sheetObj = {
+        element: sheet,
+        staticElement: staticSheet,
+        direction: direction,
+        basePage: basePage,
+        targetPage: targetPage,
+        cleaned: false
+    };
+    activeSheets.push(sheetObj);
+
+    function cleanup() {
+        if (sheetObj.cleaned) return;
+        sheetObj.cleaned = true;
+
+        sheet.removeEventListener("transitionend", cleanup);
+        if (sheet.isConnected) sheet.remove();
+        if (staticSheet.isConnected) staticSheet.remove();
+
+        activeSheets = activeSheets.filter(s => s !== sheetObj);
+
+        if (activeSheets.length === 0) {
+            sheetZIndexCounter = 1000;
+            renderCurrentPages();
+            updateNotesView();
+        }
+    }
+
+    sheet.addEventListener("transitionend", cleanup);
+    sheetObj.cleanup = cleanup;
+
+    sheet.offsetHeight;
+    sheet.style.transition = "transform 0.5s ease-in-out";
+    sheet.style.transform = direction === 'next' ? "rotateY(-180deg)" : "rotateY(180deg)";
+}
+
+function reverseSheet(sheetObj, newDirection) {
+    const el = sheetObj.element;
+    if (!el || !el.isConnected) {
+        activeSheets = activeSheets.filter(s => s !== sheetObj);
+        return;
+    }
+
+    const isNextSheet = el.classList.contains('flip-next');
+    let currentAngle = getCurrentRotationY(el);
+
+    el.style.transition = 'none';
+    el.style.transform = `rotateY(${currentAngle}deg)`;
+    el.offsetHeight;
+
+    let targetAngle = 0;
+
+    if (isNextSheet) {
+        if (newDirection === 'next') {
+            targetAngle = -180;
+            active_page_number = sheetObj.targetPage;
+        } else {
+            targetAngle = 0;
+            active_page_number = sheetObj.basePage;
+        }
+    } else {
+        if (newDirection === 'prev') {
+            targetAngle = 180;
+            active_page_number = sheetObj.targetPage;
+        } else {
+            targetAngle = 0;
+            active_page_number = sheetObj.basePage;
+        }
+    }
+
+    const angleDiff = Math.abs(targetAngle - currentAngle);
+    const duration = Math.max(0.08, (angleDiff / 180) * 0.5);
+
+    sheetObj.direction = newDirection;
+    updateNotesView();
+
+    setTimeout(() => {
+        if (!sheetObj.cleaned && activeSheets.includes(sheetObj)) {
+            sheetObj.cleanup();
+        }
+    }, (duration * 1000) + 60);
+
+    el.style.transition = `transform ${duration}s ease-out`;
+    el.style.transform = `rotateY(${targetAngle}deg)`;
+}
+
+function renderFaceContent(faceElement, fileIndex) {
+    faceElement.innerHTML = "";
+    if (fileIndex < 0 || fileIndex > currentNoteFiles.length) {
+        return;
+    }
+    if (fileIndex === currentNoteFiles.length) {
+        faceElement.innerHTML = `
+            <div class="add-page-btn">
+                <svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </div>
+        `;
+        return;
+    }
+
+    const fileMeta = currentNoteFiles[fileIndex];
+    if (fileMeta) {
+        const cachedUrl = imageCache[fileMeta.id];
+        if (cachedUrl) {
+            const img = document.createElement("img");
+            img.src = cachedUrl;
+            img.alt = fileMeta.name;
+            faceElement.appendChild(img);
+        } else {
+            getFileBlobUrl(fileMeta.id).then(url => {
+                if (url && (faceElement.innerHTML === "" || faceElement.querySelector(".page-loader"))) {
+                    faceElement.innerHTML = "";
+                    const img = document.createElement("img");
+                    img.src = url;
+                    img.alt = fileMeta.name;
+                    faceElement.appendChild(img);
+                }
+            });
+        }
+    }
+}
+
+function advancePages(stepMultiplier) {
+    const step = isSinglePage() ? 1 : 2;
+    const maxPage = currentFolderStyle === "easel" 
+        ? currentNoteFiles.length 
+        : (isSinglePage() ? currentNoteFiles.length + 1 : (Math.floor(currentNoteFiles.length / 2) + 1) * 2);
+
+    if (stepMultiplier > 0 && active_page_number < maxPage) {
+        active_page_number += step;
+        updateNotesView();
+        renderCurrentPages();
+    } else if (stepMultiplier < 0 && active_page_number > 0) {
+        active_page_number = Math.max(0, active_page_number - step);
+        updateNotesView();
+        renderCurrentPages();
+    }
+}
+let isClosingCover = false;
+
+function handleNext() {
+    if (isClosingCover) return;
+
+    if (isSinglePage() || currentFolderStyle === "easel") {
+        advancePages(1);
+        return;
+    }
+
+    if (active_page_number === 0) {
+        animateBookCover('open');
+        return;
+    }
+
+    activeSheets = activeSheets.filter(s => s.element && s.element.isConnected);
+
+    const lastSheet = activeSheets[activeSheets.length - 1];
+    if (lastSheet && lastSheet.direction === 'prev') {
+        reverseSheet(lastSheet, 'next');
+        return;
+    }
+
+    spawnNewSheet('next');
+}
+
+function handlePrev() {
+    if (isClosingCover) return;
+
+    if (isSinglePage() || currentFolderStyle === "easel") {
+        advancePages(-1);
+        return;
+    }
+
+    if (active_page_number === 2) {
+        if (activeSheets.length > 0) return;
+        
+        animateBookCover('close');
+        return;
+    }
+
+    activeSheets = activeSheets.filter(s => s.element && s.element.isConnected);
+
+    const lastSheet = activeSheets[activeSheets.length - 1];
+    if (lastSheet && lastSheet.direction === 'next') {
+        reverseSheet(lastSheet, 'prev');
+        return;
+    }
+
+    spawnNewSheet('prev');
+}
+
+let isCoverAnimating = false;
+
+function animateBookCover(direction) {
+    if (isCoverAnimating) return;
+    isCoverAnimating = true;
+
+    const notesDisplay = document.getElementById("notes_display");
+    const notesEffects = document.getElementById("notes_visual_efects");
+    const coverView = document.getElementById("notes_visual_cover");
+    const openedView = document.getElementById("notes_opend_view");
+    const coverColor = window.getComputedStyle(coverView).backgroundColor;
+    const coverHtml = coverView.innerHTML;
+
+    const oldFake = document.getElementById("fake_cover");
+    if (oldFake) oldFake.remove();
+
+    const fakeCover = document.createElement("div");
+    fakeCover.id = "fake_cover";
+    fakeCover.style.position = "absolute";
+    fakeCover.style.top = "45px";
+    fakeCover.style.right = "0px";
+    fakeCover.style.width = "576px";
+    fakeCover.style.height = "790px";
+    fakeCover.style.zIndex = "100";
+    fakeCover.style.pointerEvents = "none";
+    fakeCover.style.transformStyle = "preserve-3d";
+    fakeCover.style.transformOrigin = "left center";
+
+    const frontFace = document.createElement("div");
+    frontFace.style.position = "absolute";
+    frontFace.style.inset = "0";
+    frontFace.style.backgroundColor = coverColor;
+    frontFace.style.backfaceVisibility = "hidden";
+    frontFace.innerHTML = coverHtml;
+
+    const backFace = document.createElement("div");
+    backFace.style.position = "absolute";
+    backFace.style.inset = "0";
+    backFace.style.backgroundColor = coverColor;
+    backFace.style.transform = "rotateY(180deg)";
+    backFace.style.backfaceVisibility = "hidden";
+    
+    const fakeMainKartka = document.createElement("div");
+    fakeMainKartka.style.position = "absolute";
+    fakeMainKartka.style.top = "5px";
+    fakeMainKartka.style.left = "6px";
+    fakeMainKartka.style.width = "99.5%";
+    fakeMainKartka.style.height = "786px";
+    fakeMainKartka.style.backgroundColor = "#EFE4B0";
+    fakeMainKartka.style.display = "flex";
+    fakeMainKartka.style.padding = "0";
+
+    const fakePage = document.createElement("div");
+    fakePage.className = "page";
+    fakePage.style.margin = "0";
+
+    if (direction === 'open') {
+        fakePage.style.marginLeft = "3px";
+        fakePage.style.marginTop = "4px";
+        renderFaceContent(fakePage, 0);
+
+        const fakeMiddleGradient = document.createElement("div");
+        fakeMiddleGradient.style.position = "absolute";
+        fakeMiddleGradient.style.top = "0";
+        fakeMiddleGradient.style.right = "0";
+        fakeMiddleGradient.style.width = "20px";
+        fakeMiddleGradient.style.height = "100%";
+        fakeMiddleGradient.style.background = "linear-gradient(to left, rgba(138, 75, 16, 0.45) 0%, transparent 100%)";
+        fakeMiddleGradient.style.pointerEvents = "none";
+        fakeMiddleGradient.style.zIndex = "21";
+        fakeMainKartka.appendChild(fakeMiddleGradient);
+
+    } else {
+        fakePage.style.marginLeft = "3px";
+        fakePage.style.marginTop = "4px";
+        renderFaceContent(fakePage, 0);
+
+        const fakeMiddleGradient = document.createElement("div");
+        fakeMiddleGradient.style.position = "absolute";
+        fakeMiddleGradient.style.top = "0";
+        fakeMiddleGradient.style.right = "0";
+        fakeMiddleGradient.style.width = "20px";
+        fakeMiddleGradient.style.height = "100%";
+        fakeMiddleGradient.style.background = "linear-gradient(to left, rgba(138, 75, 16, 0.45) 0%, transparent 100%)";
+        fakeMiddleGradient.style.pointerEvents = "none";
+        fakeMiddleGradient.style.zIndex = "21";
+        fakeMainKartka.appendChild(fakeMiddleGradient);
+    }
+
+    fakeMainKartka.appendChild(fakePage);
+    backFace.appendChild(fakeMainKartka);
+    fakeCover.appendChild(frontFace);
+    fakeCover.appendChild(backFace);
+    notesEffects.appendChild(fakeCover);
+
+    if (direction === 'open') {
+        if (!isSinglePage()) {
+            notesDisplay.classList.add("opened");
+        }
+        active_page_number = isSinglePage() ? 1 : 2;
+        updateNotesView();
+        renderCurrentPages();
+
+        openedView.style.transition = "none";
+        openedView.style.maskImage = "linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 50%, rgba(0,0,0,1) 50%, rgba(0,0,0,1) 100%)";
+        coverView.style.display = "none";
+
+        notesEffects.style.transition = "none";
+        notesEffects.style.transform = "translateX(-288px)";
+        fakeCover.style.transform = "rotateY(0deg)";
+        notesEffects.offsetHeight;
+
+        notesEffects.style.transition = "transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)";
+        notesEffects.style.transform = "translateX(0px)";
+        fakeCover.style.transition = "transform 0.5s ease-in-out";
+        fakeCover.style.transform = "rotateY(-180deg)";
+
+        setTimeout(() => {
+            notesEffects.style.transform = "none";
+            notesEffects.style.transition = "";
+            document.getElementById("fake_cover").remove();
+            openedView.style.maskImage = "";
+            isCoverAnimating = false;
+        }, 500);
+
+    } else if (direction === 'close') {
+        isClosingCover = true;
+
+        activeSheets.forEach(sheetObj => {
+            if (sheetObj.element) sheetObj.element.remove();
+            if (sheetObj.staticElement) sheetObj.staticElement.remove();
+            if (sheetObj.cleanup) sheetObj.cleanup();
+        });
+        activeSheets = [];
+        sheetZIndexCounter = 1000;
+
+        const overlayContainer = document.getElementById("flip_overlay_container");
+        if (overlayContainer) overlayContainer.innerHTML = "";
+        document.querySelectorAll(".flipping-sheet, .fake-static-sheet").forEach(el => el.remove());
+
+        openedView.style.transition = "none";
+        openedView.style.maskImage = "linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 50%, rgba(0,0,0,1) 50%, rgba(0,0,0,1) 100%)";
+        coverView.style.display = "none";
+
+        notesEffects.style.transition = "none";
+        notesEffects.style.transform = "translateX(0px)";
+        fakeCover.style.transform = "rotateY(-180deg)";
+        notesEffects.offsetHeight;
+
+        notesEffects.style.transition = "transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)";
+        notesEffects.style.transform = "translateX(-288px)";
+        fakeCover.style.transition = "transform 0.5s ease-in-out";
+        fakeCover.style.transform = "rotateY(0deg)";
+
+        setTimeout(() => {
+            notesDisplay.classList.remove("opened");
+            active_page_number = 0;
+            updateNotesView();
+
+            notesEffects.style.transform = "none";
+            notesEffects.style.transition = "";
+            const activeFake = document.getElementById("fake_cover");
+            if (activeFake) activeFake.remove();
+            
+            openedView.style.maskImage = "";
+            coverView.style.display = "block";
+            renderCurrentPages();
+            isCoverAnimating = false;
+            isClosingCover = false;
+        }, 500);
+    }
+}

@@ -682,7 +682,6 @@ hr{
         height: 70px !important;
         min-width: 70px !important;
         min-height: 70px !important;
-        /* transform: none !important; */
         margin-top: 0 !important;
         margin-left: 10px !important;
         margin-right: 10px !important;
@@ -1274,7 +1273,6 @@ body.no-scroll {
     transform: scale(1.06) !important;
 }
 
-/* Skalowanie pionowe przy niskich ekranach */
 @media (max-height: 850px) {
     #notes_tab.easel-mode #easel_display {
         transform: translateY(15px) scale(0.88) !important;
@@ -1291,7 +1289,6 @@ body.no-scroll {
     }
 }
 
-/* UKŁAD MOBILNY: STRZAŁKI POD SPÓD */
 @media (max-width: 1200px) {
     #notes_tab.easel-mode {
         display: flex !important;
@@ -1319,7 +1316,6 @@ body.no-scroll {
     }
 }
 
-/* SKALOWANIE SZTALUGI ORAZ BLOKADA WYPADAJĄCEGO ZDJĘCIA (uwzględnia skalę kontenera) */
 @media (max-width: 850px) {
     #notes_tab.easel-mode #easel_display {
         transform: translateY(0px) scale(0.85) !important;
@@ -1382,4 +1378,155 @@ body.no-scroll {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     min-width: 140px;
     user-select: none;
+}
+
+#notes_display {
+    perspective: 2500px !important;
+}
+
+#notes_display.opened {
+    width: 1152px !important;
+}
+
+#notes_visual_efects {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+}
+
+#notes_visual_cover {
+    display: block;
+    position: absolute !important;
+    top: 45px !important;
+    right: 0px !important;
+    left: auto !important;
+    width: 576px !important;
+    height: 790px !important;
+    transform-origin: left center !important;
+    transform-style: preserve-3d !important;
+    z-index: 100 !important;
+    backface-visibility: hidden !important;
+    -webkit-backface-visibility: hidden !important;
+}
+
+#notes_visual_cover::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: #EFE4B0;
+    border: 1px solid rgba(138, 75, 16, 0.5);
+    transform: rotateY(180deg);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+#notes_visual_cover > * {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+#notes_opend_view {
+    position: absolute !important;
+    top: 45px !important;
+    height: 790px !important;
+    z-index: 5 !important;
+    overflow: visible !important;
+}
+
+#notes_top_visual {
+    z-index: 10 !important;
+}
+
+#notes_right_visual {
+    z-index: 15 !important;
+}
+
+#pages_ilusion_visual {
+    z-index: 20 !important;
+}
+
+#flip_overlay_container {
+    position: absolute !important;
+    top: 50px !important;
+    right: 0px !important;
+    width: 99.5% !important;
+    height: 786px !important;
+    perspective: 2500px !important;
+    pointer-events: none !important;
+    z-index: 99999999 !important;
+}
+
+.flipping-sheet {
+    position: absolute !important;
+    top: 4px !important;
+    width: 550px !important;
+    height: 778px !important;
+    transform-style: preserve-3d !important;
+    pointer-events: none !important;
+    z-index: 99999999 !important;
+}
+
+.flipping-sheet.flip-next {
+    right: 4px !important;
+    left: auto !important;
+    transform-origin: -19px center !important;
+}
+
+.flipping-sheet.flip-prev {
+    left: 3px !important;
+    right: auto !important;
+    transform-origin: 570px center !important;
+}
+
+.flipping-sheet .flip-face {
+    position: absolute !important;
+    inset: 0 !important;
+    backface-visibility: hidden !important;
+    -webkit-backface-visibility: hidden !important;
+    background-color: #EFE4B0 !important;
+    border: 1px rgba(138, 75, 16, 0.74) solid !important;
+    box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.25) !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    overflow: hidden !important;
+}
+
+.flipping-sheet .flip-front { transform: rotateY(0deg) !important; }
+.flipping-sheet .flip-back { transform: rotateY(180deg) !important; }
+
+.flipping-sheet img {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+    user-select: none !important;
+    pointer-events: none !important;
+}
+
+.fake-static-sheet {
+    position: absolute !important;
+    top: 4px !important;
+    width: 550px !important;
+    height: 778px !important;
+    background-color: #EFE4B0 !important;
+    border: 1px rgba(138, 75, 16, 0.74) solid !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+    z-index: 2 !important;
+}
+
+.fake-static-sheet.pos-right { right: 4px !important; left: auto !important; }
+.fake-static-sheet.pos-left { left: 3px !important; right: auto !important; }
+
+.fake-static-sheet img {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+    user-select: none !important;
+    pointer-events: none !important;
 }
