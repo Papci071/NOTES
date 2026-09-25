@@ -1384,17 +1384,6 @@ body.no-scroll {
     perspective: 2500px !important;
 }
 
-#notes_display.opened {
-    width: 1152px !important;
-}
-
-#notes_visual_efects {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    transform-style: preserve-3d;
-}
 
 #notes_visual_cover {
     display: block;
@@ -1402,8 +1391,6 @@ body.no-scroll {
     top: 45px !important;
     right: 0px !important;
     left: auto !important;
-    width: 576px !important;
-    height: 790px !important;
     transform-origin: left center !important;
     transform-style: preserve-3d !important;
     z-index: 100 !important;
@@ -1430,7 +1417,6 @@ body.no-scroll {
 #notes_opend_view {
     position: absolute !important;
     top: 45px !important;
-    height: 790px !important;
     z-index: 5 !important;
     overflow: visible !important;
 }
